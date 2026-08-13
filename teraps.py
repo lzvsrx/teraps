@@ -904,6 +904,8 @@ class Microphone:
         self.error = ""
         self.backend = "indisponivel"
         self.device_name = "microfone padrao do Windows"
+        self.sounddevice_input_index = None
+        self.sounddevice_sample_rate = None
         try:
             import speech_recognition as sr  # type: ignore
 
@@ -925,7 +927,9 @@ class Microphone:
 
                     self.sd = sd
                     self.np = np
-                    if self._sounddevice_has_input(sd):
+                    input_device = self._select_sounddevice_input(sd)
+                    if input_device:
+                        self.sounddevice_input_index, self.device_name, self.sounddevice_sample_rate = input_device
                         self.backend = "sounddevice"
                         self.available = True
                     else:
@@ -1005,7 +1009,7 @@ class Microphone:
     def _capture_with_sounddevice(self):
         if not self.sd or not self.np:
             raise RuntimeError("sounddevice indisponivel")
-        sample_rate = int(self.config["mic_sample_rate"] or 16000)
+        sample_rate = int(self.sounddevice_sample_rate or self.config["mic_sample_rate"] or 16000)
         seconds = float(self.config["mic_sounddevice_seconds"] or 6)
         self.device_name = self._sounddevice_default_name()
         recording = self.sd.rec(  # type: ignore[union-attr]
@@ -1013,7 +1017,7 @@ class Microphone:
             samplerate=sample_rate,
             channels=1,
             dtype="int16",
-            device=None,
+            device=self.sounddevice_input_index,
         )
         self.sd.wait()  # type: ignore[union-attr]
         data = self.np.asarray(recording, dtype=self.np.int16).reshape(-1)  # type: ignore[union-attr]
@@ -1023,6 +1027,9 @@ class Microphone:
 
     def _sounddevice_default_name(self) -> str:
         try:
+            if self.sounddevice_input_index is not None:
+                device = self.sd.query_devices(self.sounddevice_input_index)  # type: ignore[union-attr]
+                return str(device.get("name") or "microfone do Windows")
             device = self.sd.query_devices(kind="input")  # type: ignore[union-attr]
             return str(device.get("name") or "microfone padrao do Windows")
         except Exception:
@@ -1037,12 +1044,38 @@ class Microphone:
             return False
 
     @staticmethod
-    def _sounddevice_has_input(sd_module) -> bool:
+    def _select_sounddevice_input(sd_module):
         try:
             device = sd_module.query_devices(kind="input")
-            return int(device.get("max_input_channels", 0)) > 0
+            if int(device.get("max_input_channels", 0)) > 0:
+                default_index = sd_module.default.device[0]
+                sample_rate = int(device.get("default_samplerate") or 44100)
+                return default_index, str(device.get("name") or "microfone padrao do Windows"), sample_rate
         except Exception:
-            return False
+            pass
+        try:
+            devices = sd_module.query_devices()
+            candidates = []
+            for index, device in enumerate(devices):
+                if int(device.get("max_input_channels", 0)) > 0:
+                    name = str(device.get("name") or f"entrada {index}")
+                    score = 0
+                    low = name.lower()
+                    if "microfone" in low or "microphone" in low or "mic" in low:
+                        score += 10
+                    if "realtek" in low:
+                        score += 4
+                    if "mixagem" in low or "stereo mix" in low or "line input" in low or "entrada" in low:
+                        score -= 3
+                    candidates.append((score, index, name))
+            if candidates:
+                _score, index, name = sorted(candidates, reverse=True)[0]
+                device = devices[index]
+                sample_rate = int(device.get("default_samplerate") or 44100)
+                return index, name, sample_rate
+        except Exception:
+            return None
+        return None
 
     @staticmethod
     def _clarify_message() -> str:

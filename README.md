@@ -144,6 +144,7 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - Interface limpa: a conversa principal fica visivel; terminal interno, sistema e memoria/aprendizado rodam por tras no proprio `.exe` e mostram resultados no chat quando solicitados.
 - Central de comandos: atalhos unificados para tudo que foi integrado no Teraps, incluindo voz, microfone, avatar Unreal, aprendizado, YouTube, tecnologia, trabalho, automacao, GitHub e release.
 - Entrada por voz: usa o microfone padrao definido no Windows, reconhece a fala e executa o comando como texto normal. Se nao entender, pede para o usuario explicar de outro jeito.
+- Entrada por voz no Windows: quando o Windows nao informa um microfone padrao valido, o Teraps escolhe automaticamente o primeiro microfone real disponivel e usa a taxa nativa do dispositivo.
 - Tech Studio: ajuda programadores, desenvolvedores e designers com planejamento de apps, arquitetura, stack, revisao rapida de codigo, explicacao de arquivos, checklist de deploy, design system, UX review e briefing de design.
 - Life & Work Studio: ajuda em areas amplas de emprego, servicos e vida pessoal com planos de produtividade, rotinas, checklists, melhorias de tempo, atendimento, vendas, administracao, saude, educacao, financeiro, juridico, logistica, criacao, operacoes, seguranca e servicos locais.
 - Criador YouTube: configura conta/canal, salva perfil do canal no SQLite, gera ideias, titulos, descricoes, tags, roteiros, checklist e calendario editorial.
