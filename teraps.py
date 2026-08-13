@@ -31,7 +31,7 @@ import urllib.request
 import webbrowser
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, Canvas, Entry, Frame, Label, Tk, Text, StringVar, ttk
+from tkinter import BOTH, END, LEFT, RIGHT, Canvas, Entry, Frame, Label, Tk, Text, StringVar
 
 try:
     from PIL import Image, ImageTk
@@ -2473,13 +2473,13 @@ class TerapsBrain:
             return self.github_status()
         if low in {"preparar release", "checklist release", "publicar versao", "publicar versÃ£o"}:
             return self.release_checklist()
-        if low in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada"}:
+        if low in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada", "interface limpa"}:
             return (
-                "Tudo esta integrado dentro do Teraps: conversa, terminal interno, sistema e memoria ficam em abas no proprio .exe. "
+                "Tudo esta integrado dentro do Teraps: a conversa fica visivel e terminal, sistema e memoria trabalham por tras no proprio .exe. "
                 "Use 'comando ipconfig', 'comando tarefas' ou 'comando disco' para executar diagnosticos sem abrir terminal externo."
             )
         if low in {"painel sistema", "aba sistema", "painel memoria", "painel memória", "aba memoria", "aba memória"}:
-            return "Os paineis Sistema e Memoria estao dentro da janela principal do Teraps e sao atualizados automaticamente apos as interacoes."
+            return "Sistema e memoria estao ativos em segundo plano e sao atualizados automaticamente apos as interacoes. Quando voce pedir, eu mostro o resumo direto na conversa."
         if low in {"sugestoes", "sugestões", "o que eu posso fazer", "me sugira algo"}:
             return self.suggestion_text()
         if low.startswith(("lembre que ", "memorize que ", "aprenda que ")):
@@ -2731,13 +2731,13 @@ class TerapsBrain:
             return self.github_status()
         if key in {"preparar release", "checklist release", "publicar versao"}:
             return self.release_checklist()
-        if key in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada"}:
+        if key in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada", "interface limpa"}:
             return (
-                "Tudo esta integrado dentro do Teraps: conversa, terminal interno, sistema e memoria ficam em abas no proprio .exe. "
+                "Tudo esta integrado dentro do Teraps: a conversa fica visivel e terminal, sistema e memoria trabalham por tras no proprio .exe. "
                 "Use 'comando ipconfig', 'comando tarefas' ou 'comando disco' para executar diagnosticos sem abrir terminal externo."
             )
         if key in {"painel sistema", "aba sistema", "painel memoria", "aba memoria"}:
-            return "Os paineis Sistema e Memoria estao dentro da janela principal do Teraps e sao atualizados automaticamente apos as interacoes."
+            return "Sistema e memoria estao ativos em segundo plano e sao atualizados automaticamente apos as interacoes. Quando voce pedir, eu mostro o resumo direto na conversa."
         if key in {"sugestoes", "o que eu posso fazer", "me sugira algo"}:
             return self.suggestion_text()
         if key.startswith("configurar canal youtube"):
@@ -2865,7 +2865,7 @@ class TerapsBrain:
             "Central de Comandos Teraps:\n"
             "Nucleo:\n"
             "- modo completo / status completo / central comandos\n"
-            "- terminal interno / telas integradas / painel sistema / painel memoria\n"
+            "- terminal interno / interface limpa / painel sistema / painel memoria\n"
             "- sistema / autodiagnostico / autorreparo / manutencao automatica\n\n"
             "Voz e microfone:\n"
             "- voz teraps / voz neural / voz windows / teste voz / saida de audio\n"
@@ -3222,7 +3222,7 @@ class TerapsBrain:
             "- me lembre de revisar o projeto as 18:30\n"
             "- lembretes / tarefas\n"
             "- sistema\n"
-            "- terminal interno / telas integradas\n"
+            "- terminal interno / interface limpa\n"
             "- painel sistema / painel memoria\n"
             "- perfil hardware / adaptar hardware\n"
             "- modo economico / modo ultra / perfil automatico\n"
@@ -3733,21 +3733,10 @@ class TerapsApp:
         Label(right, text="TERAPS", bg="#061014", fg="#b7fbff", font=("Segoe UI", 20, "bold")).pack(pady=(18, 4))
         Label(right, textvariable=self.status, bg="#061014", fg="#42f5ff", font=("Segoe UI", 9)).pack(pady=(0, 12))
 
-        style = ttk.Style()
-        try:
-            style.theme_use("default")
-            style.configure("Teraps.TNotebook", background="#061014", borderwidth=0)
-            style.configure("Teraps.TNotebook.Tab", background="#0a2228", foreground="#b7fbff", padding=(10, 6))
-            style.map("Teraps.TNotebook.Tab", background=[("selected", "#0ea5b7")], foreground=[("selected", "#001316")])
-        except Exception:
-            logging.info("Tema ttk padrao mantido.")
-
-        self.console_tabs = ttk.Notebook(right, style="Teraps.TNotebook")
-        self.console_tabs.pack(fill=BOTH, expand=True, padx=14, pady=(0, 10))
-        self.chat = self._create_console_tab("Conversa")
-        self.terminal = self._create_console_tab("Terminal")
-        self.system_panel = self._create_console_tab("Sistema")
-        self.memory_panel = self._create_console_tab("Memoria")
+        self.chat = self._create_visible_console(right, "Conversa")
+        self.terminal = self._create_hidden_console("Terminal")
+        self.system_panel = self._create_hidden_console("Sistema")
+        self.memory_panel = self._create_hidden_console("Memoria")
 
         self._write_panel(self.chat, "Teraps: Sistema online. Digite e pressione Enter, ou use Ctrl+Espaco para falar.\n\n")
         self._write_panel(self.terminal, "Terminal interno pronto. Nenhum prompt externo sera aberto pelo Teraps.\n\n")
@@ -3767,11 +3756,9 @@ class TerapsApp:
         root.bind("<Control-space>", lambda _event: self.listen())
         root.bind("<Control-Return>", lambda _event: self.submit())
 
-    def _create_console_tab(self, title: str) -> Text:
-        frame = Frame(self.console_tabs, bg="#061014")
-        self.console_tabs.add(frame, text=title)
+    def _create_visible_console(self, parent: Frame, title: str) -> Text:
         text = Text(
-            frame,
+            parent,
             bg="#08181d",
             fg="#dffeff",
             insertbackground="#42f5ff",
@@ -3781,7 +3768,22 @@ class TerapsApp:
             padx=12,
             pady=12,
         )
-        text.pack(fill=BOTH, expand=True)
+        text.pack(fill=BOTH, expand=True, padx=14, pady=(0, 10))
+        text.configure(state="disabled")
+        return text
+
+    def _create_hidden_console(self, title: str) -> Text:
+        text = Text(
+            self.root,
+            bg="#08181d",
+            fg="#dffeff",
+            insertbackground="#42f5ff",
+            relief="flat",
+            wrap="word",
+            font=("Consolas" if title == "Terminal" else "Segoe UI", 10),
+            padx=12,
+            pady=12,
+        )
         text.configure(state="disabled")
         return text
 
@@ -3859,10 +3861,6 @@ class TerapsApp:
         self.append_chat("Voce", text)
         if self._is_terminal_command(text):
             self.append_terminal("entrada", f"> {text}")
-            try:
-                self.console_tabs.select(self.terminal)
-            except Exception:
-                pass
         self.avatar.set_state(processing=True)
         self.bridge.send_state("thinking", "focused")
         threading.Thread(target=self._think, args=(text,), daemon=True).start()

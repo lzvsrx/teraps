@@ -54,7 +54,7 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `o que voce lembra`
 - `sistema`
 - `terminal interno`
-- `telas integradas`
+- `interface limpa`
 - `painel sistema`
 - `painel memoria`
 - `autodiagnostico`
@@ -135,7 +135,7 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - Aprendizado pessoal automatico: entende frases como `eu gosto de...`, `prefiro...`, `trabalho com...` e salva isso sem precisar usar `lembre que`.
 - Lembretes e tarefas locais: grava lembretes no SQLite e avisa dentro da propria conversa quando vencem.
 - Executor interno oculto: comandos de diagnostico rodam como filhos invisiveis do `.exe`; a saida aparece no chat, sem abrir terminal externo.
-- Interface integrada: conversa, terminal interno, painel de sistema e memoria/aprendizado ficam juntos dentro da janela do `.exe`.
+- Interface limpa: a conversa principal fica visivel; terminal interno, sistema e memoria/aprendizado rodam por tras no proprio `.exe` e mostram resultados no chat quando solicitados.
 - Central de comandos: atalhos unificados para tudo que foi integrado no Teraps, incluindo voz, microfone, avatar Unreal, aprendizado, YouTube, tecnologia, trabalho, automacao, GitHub e release.
 - Entrada por voz: usa o microfone padrao definido no Windows, reconhece a fala e executa o comando como texto normal. Se nao entender, pede para o usuario explicar de outro jeito.
 - Tech Studio: ajuda programadores, desenvolvedores e designers com planejamento de apps, arquitetura, stack, revisao rapida de codigo, explicacao de arquivos, checklist de deploy, design system, UX review e briefing de design.
