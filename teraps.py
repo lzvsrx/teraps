@@ -2461,6 +2461,18 @@ class TerapsBrain:
             return "Estou operacional e tranquila. Quanto mais eu aprendo sobre voce, menos preciso interromper com perguntas."
         if low in {"ajuda", "comandos", "o que voce faz", "o que você faz"}:
             return self.help_text()
+        if low in {"central comandos", "comandos completos", "todos comandos", "menu teraps", "painel comandos"}:
+            return self.command_center_text()
+        if low in {"ativar modo completo", "modo completo", "modo jarvis", "modo teraps completo", "preparar teraps"}:
+            return self.activate_complete_mode()
+        if low in {"status completo", "status geral", "diagnostico completo", "diagnÃ³stico completo", "estado completo"}:
+            return self.full_status()
+        if low in {"teste unreal fala", "teste fala unreal", "sincronizar unreal", "sincronizar avatar 3d"}:
+            return self.unreal_speech_test()
+        if low in {"status github", "github status", "status projeto github", "status repositorio github", "status repositÃ³rio github"}:
+            return self.github_status()
+        if low in {"preparar release", "checklist release", "publicar versao", "publicar versÃ£o"}:
+            return self.release_checklist()
         if low in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada"}:
             return (
                 "Tudo esta integrado dentro do Teraps: conversa, terminal interno, sistema e memoria ficam em abas no proprio .exe. "
@@ -2707,6 +2719,18 @@ class TerapsBrain:
             return "Estou operacional e tranquila. Quanto mais eu aprendo sobre voce, menos preciso interromper com perguntas."
         if key in {"ajuda", "comandos", "o que voce faz"}:
             return self.help_text()
+        if key in {"central comandos", "comandos completos", "todos comandos", "menu teraps", "painel comandos"}:
+            return self.command_center_text()
+        if key in {"ativar modo completo", "modo completo", "modo jarvis", "modo teraps completo", "preparar teraps"}:
+            return self.activate_complete_mode()
+        if key in {"status completo", "status geral", "diagnostico completo", "estado completo"}:
+            return self.full_status()
+        if key in {"teste unreal fala", "teste fala unreal", "sincronizar unreal", "sincronizar avatar 3d"}:
+            return self.unreal_speech_test()
+        if key in {"status github", "github status", "status projeto github", "status repositorio github"}:
+            return self.github_status()
+        if key in {"preparar release", "checklist release", "publicar versao"}:
+            return self.release_checklist()
         if key in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada"}:
             return (
                 "Tudo esta integrado dentro do Teraps: conversa, terminal interno, sistema e memoria ficam em abas no proprio .exe. "
@@ -2836,6 +2860,145 @@ class TerapsBrain:
             return self.memory.optimize()
         return None
 
+    def command_center_text(self) -> str:
+        return (
+            "Central de Comandos Teraps:\n"
+            "Nucleo:\n"
+            "- modo completo / status completo / central comandos\n"
+            "- terminal interno / telas integradas / painel sistema / painel memoria\n"
+            "- sistema / autodiagnostico / autorreparo / manutencao automatica\n\n"
+            "Voz e microfone:\n"
+            "- voz teraps / voz neural / voz windows / teste voz / saida de audio\n"
+            "- status voz / status microfone / ativar voz / desativar voz\n\n"
+            "Avatar e Unreal:\n"
+            "- avatar 3d / iniciar unreal / status unreal / teste unreal fala\n"
+            "- ponte 3d / sincronizar avatar 3d / configurar unreal CAMINHO\n\n"
+            "Aprendizado e automacao:\n"
+            "- aprendizado automatico / estado automatico / automacao proativa\n"
+            "- verificar atualizacao / configurar fonte update URL / adaptar hardware\n\n"
+            "Trabalho, tecnologia e criacao:\n"
+            "- ajuda trabalho / plano trabalho AREA / produtividade PROFISSAO\n"
+            "- ajuda programador / plano app IDEIA / revisar codigo ARQUIVO\n"
+            "- configurar canal youtube ... / criar video youtube TEMA / calendario youtube\n\n"
+            "Projeto e GitHub:\n"
+            "- status github / checklist release / status git / pipelines"
+        )
+
+    def activate_complete_mode(self) -> str:
+        self.config["auto_speak"] = True
+        self.config["audio_output"] = "windows_default"
+        self.config["voice_engine"] = "neural"
+        self.config["neural_voice"] = "pt-BR-FranciscaNeural"
+        self.config["neural_voice_rate"] = "-3%"
+        self.config["neural_voice_pitch"] = "-2Hz"
+        self.config["neural_voice_volume"] = "+0%"
+        self.config["voice_rate"] = 168
+        self.config["voice_volume"] = 0.96
+        self.config["voice_name_hint"] = "female"
+        self.config["avatar_3d_mode"] = True
+        self.config["hologram_bridge_enabled"] = True
+        self.config["auto_learning_enabled"] = True
+        self.config["auto_maintenance_enabled"] = True
+        self.config["auto_update_check_enabled"] = True
+        self.config["auto_proactive_enabled"] = True
+        self.config["adaptive_hardware_enabled"] = True
+        adapter = HardwareAdapter(self.config)
+        profile = adapter.detect()
+        adapter.apply(profile)
+        self.memory.remember("sistema", "modo_completo", "voz, microfone, aprendizado, automacao, hardware adaptativo e avatar 3D preparados")
+        bridge_status = self.bridge.send_state(
+            "speaking",
+            "ready",
+            {"text": "Modo completo Teraps ativado.", "duration_ms": 2400, "source": "complete_mode"},
+        )
+        return (
+            "Modo completo ativado.\n"
+            "- Voz feminina neural priorizada com fallback Windows\n"
+            "- Audio no dispositivo padrao do sistema\n"
+            "- Aprendizado, manutencao, atualizacao e sugestoes automaticas ativos\n"
+            f"- Perfil de hardware: {profile.name}\n"
+            "- Avatar 3D/Unreal preparado para sincronizar fala e estados\n"
+            f"- Ponte 3D: {bridge_status}"
+        )
+
+    def full_status(self) -> str:
+        parts = [
+            "STATUS COMPLETO TERAPS",
+            "",
+            self.system.summary(),
+            "",
+            Voice(self.config).status(),
+            "",
+            Microphone(self.config).status(),
+            "",
+            self.adaptive_status(),
+            "",
+            self.bridge.status(),
+            "",
+            self.youtube.channel_status(),
+            "",
+            "Aprendizado:\n" + self.memory.learned_profile_summary(),
+        ]
+        return "\n".join(parts)
+
+    def unreal_speech_test(self) -> str:
+        self.config["hologram_bridge_enabled"] = True
+        text = "Teste de fala sincronizada do Teraps no avatar holografico 3D."
+        result = self.bridge.send_state(
+            "speaking",
+            "warm",
+            {"text": text, "duration_ms": 4200, "source": "unreal_speech_test"},
+        )
+        return (
+            "Teste de fala enviado para o Unreal.\n"
+            f"- Texto: {text}\n"
+            f"- Resultado: {result}\n"
+            "Se o Unreal estiver aberto com 'iniciar unreal', a boca, olhos, cabeca, mao, brilho e particulas devem reagir."
+        )
+
+    def github_status(self) -> str:
+        repo = self._repo_path()
+        if not repo:
+            return "Nao encontrei a pasta .git do projeto Teraps nesta maquina."
+        try:
+            status = run_hidden(["git", "status", "--short", "--branch"], cwd=str(repo), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+            log = run_hidden(["git", "log", "--oneline", "--decorate", "-3"], cwd=str(repo), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+            remote = run_hidden(["git", "remote", "-v"], cwd=str(repo), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+            return (
+                f"Status GitHub do projeto em {repo}:\n"
+                f"{(status.stdout or status.stderr).strip()}\n\n"
+                "Ultimos commits:\n"
+                f"{(log.stdout or log.stderr).strip()}\n\n"
+                "Remotos:\n"
+                f"{(remote.stdout or remote.stderr).strip()}"
+            )[:3500]
+        except Exception as exc:
+            return f"Nao consegui ler o status GitHub local: {exc}"
+
+    def release_checklist(self) -> str:
+        return (
+            "Checklist de release Teraps:\n"
+            "- rodar python -m py_compile teraps.py\n"
+            "- validar script Unreal com UnrealEditor-Cmd\n"
+            "- recompilar dist/Teraps.exe com criar_executavel.ps1\n"
+            "- abrir o EXE e confirmar que permanece rodando\n"
+            "- testar: teste voz, status microfone, terminal interno, status unreal, teste unreal fala\n"
+            "- confirmar que teraps_data, logs, cache, build e Saved/Intermediate do Unreal estao fora do Git\n"
+            "- commit, push para main e conferir GitHub\n"
+            "Comando util no Teraps: status github."
+        )
+
+    @staticmethod
+    def _repo_path() -> Path | None:
+        candidates = [BASE_DIR, BASE_DIR.parent, Path.cwd()]
+        for candidate in candidates:
+            try:
+                if (candidate / ".git").exists():
+                    return candidate
+            except Exception:
+                continue
+        return None
+
     def adaptive_status(self) -> str:
         profile = self.config["adaptive_last_profile"] or {}
         if not profile:
@@ -2884,6 +3047,7 @@ class TerapsBrain:
             "educacao": ("Educacao", "plano trabalho professor"),
             "saude": ("Saude", "plano trabalho clinica"),
             "servicos": ("Servicos", "checklist servico atendimento ao cliente"),
+            "automacao": ("Modo completo", "modo completo"),
             "memoria": ("Memoria", "o que voce lembra"),
             "foco": ("Modo foco", "modo foco"),
             "casa": ("Ambiente", "sensores"),
@@ -2894,6 +3058,7 @@ class TerapsBrain:
                 suggestions.append(item)
         defaults = [
             ("Conversar", "oi"),
+            ("Comandos", "central comandos"),
             ("Pesquisar", "pesquise novidades de inteligencia artificial"),
             ("Resumo", "resumo executivo"),
             ("Sistema", "sistema"),
@@ -3045,6 +3210,9 @@ class TerapsBrain:
     def help_text(self) -> str:
         return (
             "Comandos principais:\n"
+            "- central comandos / comandos completos\n"
+            "- modo completo / status completo\n"
+            "- teste unreal fala / status github / checklist release\n"
             "- pesquise energia solar residencial\n"
             "- abra calculadora\n"
             "- vincule meu app em \"C:\\Caminho\\app.exe\"\n"
