@@ -31,7 +31,7 @@ import urllib.request
 import webbrowser
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, Canvas, Entry, Frame, Label, Tk, Button, Text, StringVar
+from tkinter import BOTH, END, LEFT, RIGHT, Canvas, Entry, Frame, Label, Tk, Button, Text, StringVar, ttk
 
 try:
     from PIL import Image, ImageTk
@@ -2456,6 +2456,13 @@ class TerapsBrain:
             return "Estou operacional e tranquila. Quanto mais eu aprendo sobre voce, menos preciso interromper com perguntas."
         if low in {"ajuda", "comandos", "o que voce faz", "o que você faz"}:
             return self.help_text()
+        if low in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada"}:
+            return (
+                "Tudo esta integrado dentro do Teraps: conversa, terminal interno, sistema e memoria ficam em abas no proprio .exe. "
+                "Use 'comando ipconfig', 'comando tarefas' ou 'comando disco' para executar diagnosticos sem abrir terminal externo."
+            )
+        if low in {"painel sistema", "aba sistema", "painel memoria", "painel memória", "aba memoria", "aba memória"}:
+            return "Os paineis Sistema e Memoria estao dentro da janela principal do Teraps e sao atualizados automaticamente apos as interacoes."
         if low in {"sugestoes", "sugestões", "o que eu posso fazer", "me sugira algo"}:
             return self.suggestion_text()
         if low.startswith(("lembre que ", "memorize que ", "aprenda que ")):
@@ -2695,6 +2702,13 @@ class TerapsBrain:
             return "Estou operacional e tranquila. Quanto mais eu aprendo sobre voce, menos preciso interromper com perguntas."
         if key in {"ajuda", "comandos", "o que voce faz"}:
             return self.help_text()
+        if key in {"terminal", "terminal interno", "cmd interno", "powershell interno", "telas integradas", "interface integrada"}:
+            return (
+                "Tudo esta integrado dentro do Teraps: conversa, terminal interno, sistema e memoria ficam em abas no proprio .exe. "
+                "Use 'comando ipconfig', 'comando tarefas' ou 'comando disco' para executar diagnosticos sem abrir terminal externo."
+            )
+        if key in {"painel sistema", "aba sistema", "painel memoria", "aba memoria"}:
+            return "Os paineis Sistema e Memoria estao dentro da janela principal do Teraps e sao atualizados automaticamente apos as interacoes."
         if key in {"sugestoes", "o que eu posso fazer", "me sugira algo"}:
             return self.suggestion_text()
         if key.startswith("configurar canal youtube"):
@@ -3035,6 +3049,8 @@ class TerapsBrain:
             "- me lembre de revisar o projeto as 18:30\n"
             "- lembretes / tarefas\n"
             "- sistema\n"
+            "- terminal interno / telas integradas\n"
+            "- painel sistema / painel memoria\n"
             "- perfil hardware / adaptar hardware\n"
             "- modo economico / modo ultra / perfil automatico\n"
             "- autodiagnostico / autorreparo\n"
@@ -3543,20 +3559,26 @@ class TerapsApp:
         Label(right, text="TERAPS", bg="#061014", fg="#b7fbff", font=("Segoe UI", 20, "bold")).pack(pady=(18, 4))
         Label(right, textvariable=self.status, bg="#061014", fg="#42f5ff", font=("Segoe UI", 9)).pack(pady=(0, 12))
 
-        self.chat = Text(
-            right,
-            bg="#08181d",
-            fg="#dffeff",
-            insertbackground="#42f5ff",
-            relief="flat",
-            wrap="word",
-            font=("Segoe UI", 10),
-            padx=12,
-            pady=12,
-        )
-        self.chat.pack(fill=BOTH, expand=True, padx=14, pady=(0, 10))
-        self.chat.insert(END, "Teraps: Sistema online. Fale ou digite naturalmente; use 'ajuda' se quiser ver comandos.\n\n")
-        self.chat.configure(state="disabled")
+        style = ttk.Style()
+        try:
+            style.theme_use("default")
+            style.configure("Teraps.TNotebook", background="#061014", borderwidth=0)
+            style.configure("Teraps.TNotebook.Tab", background="#0a2228", foreground="#b7fbff", padding=(10, 6))
+            style.map("Teraps.TNotebook.Tab", background=[("selected", "#0ea5b7")], foreground=[("selected", "#001316")])
+        except Exception:
+            logging.info("Tema ttk padrao mantido.")
+
+        self.console_tabs = ttk.Notebook(right, style="Teraps.TNotebook")
+        self.console_tabs.pack(fill=BOTH, expand=True, padx=14, pady=(0, 10))
+        self.chat = self._create_console_tab("Conversa")
+        self.terminal = self._create_console_tab("Terminal")
+        self.system_panel = self._create_console_tab("Sistema")
+        self.memory_panel = self._create_console_tab("Memoria")
+
+        self._write_panel(self.chat, "Teraps: Sistema online. Fale ou digite naturalmente; use 'ajuda' se quiser ver comandos.\n\n")
+        self._write_panel(self.terminal, "Terminal interno pronto. Nenhum prompt externo sera aberto pelo Teraps.\n\n")
+        self.refresh_system_panel()
+        self.refresh_memory_panel()
 
         input_frame = Frame(right, bg="#061014")
         input_frame.pack(fill="x", padx=14, pady=(0, 14))
@@ -3566,11 +3588,65 @@ class TerapsApp:
         Button(input_frame, text="Falar", command=self.listen, bg="#18343b", fg="#b7fbff", relief="flat", font=("Segoe UI", 10, "bold")).pack(side=RIGHT, padx=(8, 0), ipady=6)
         Button(input_frame, text="Enviar", command=self.submit, bg="#0ea5b7", fg="#001316", relief="flat", font=("Segoe UI", 10, "bold")).pack(side=RIGHT, padx=(8, 0), ipady=6)
 
+    def _create_console_tab(self, title: str) -> Text:
+        frame = Frame(self.console_tabs, bg="#061014")
+        self.console_tabs.add(frame, text=title)
+        text = Text(
+            frame,
+            bg="#08181d",
+            fg="#dffeff",
+            insertbackground="#42f5ff",
+            relief="flat",
+            wrap="word",
+            font=("Consolas" if title == "Terminal" else "Segoe UI", 10),
+            padx=12,
+            pady=12,
+        )
+        text.pack(fill=BOTH, expand=True)
+        text.configure(state="disabled")
+        return text
+
+    @staticmethod
+    def _write_panel(panel: Text, content: str) -> None:
+        panel.configure(state="normal")
+        panel.insert(END, content)
+        panel.see(END)
+        panel.configure(state="disabled")
+
     def append_chat(self, who: str, text: str) -> None:
-        self.chat.configure(state="normal")
-        self.chat.insert(END, f"{who}: {text}\n\n")
-        self.chat.see(END)
-        self.chat.configure(state="disabled")
+        self._write_panel(self.chat, f"{who}: {text}\n\n")
+
+    def append_terminal(self, title: str, text: str) -> None:
+        timestamp = _dt.datetime.now().strftime("%H:%M:%S")
+        self._write_panel(self.terminal, f"[{timestamp}] {title}\n{text}\n\n")
+
+    def refresh_system_panel(self) -> None:
+        content = (
+            "PAINEL DO SISTEMA\n\n"
+            + SystemInfo(self.config).summary()
+            + "\n\n"
+            + Maintenance().status()
+        )
+        self._replace_panel(self.system_panel, content + "\n")
+
+    def refresh_memory_panel(self) -> None:
+        memories = self.memory.recall("", limit=12)
+        state = self.memory.get_state("auto_learning", {})
+        lines = ["MEMORIA E APRENDIZADO", "", "Memorias recentes:"]
+        if memories:
+            lines.extend(f"- {kind}/{key}: {value}" for kind, key, value in memories)
+        else:
+            lines.append("- nenhuma memoria salva ainda")
+        lines.extend(["", "Estado automatico:", json.dumps(state, ensure_ascii=False, indent=2)[:2500]])
+        self._replace_panel(self.memory_panel, "\n".join(lines) + "\n")
+
+    @staticmethod
+    def _replace_panel(panel: Text, content: str) -> None:
+        panel.configure(state="normal")
+        panel.delete("1.0", END)
+        panel.insert(END, content)
+        panel.see("1.0")
+        panel.configure(state="disabled")
 
     def enqueue_auto_message(self, text: str) -> None:
         self.responses.put("[AUTO] " + text)
@@ -3585,6 +3661,12 @@ class TerapsApp:
         self.entry.delete(0, END)
         self.last_user_text = text
         self.append_chat("Voce", text)
+        if self._is_terminal_command(text):
+            self.append_terminal("entrada", f"> {text}")
+            try:
+                self.console_tabs.select(self.terminal)
+            except Exception:
+                pass
         self.avatar.set_state(processing=True)
         self.bridge.send_state("thinking", "focused")
         threading.Thread(target=self._think, args=(text,), daemon=True).start()
@@ -3631,6 +3713,10 @@ class TerapsApp:
                 self.avatar.start_speaking(clean_response, speech_ms)
                 speech_until = self.avatar.speech_until
                 self.append_chat("Teraps", clean_response)
+                if self._is_terminal_command(self.last_user_text) or is_auto:
+                    self.append_terminal("saida", clean_response)
+                self.refresh_system_panel()
+                self.refresh_memory_panel()
                 self.say(clean_response)
                 self.root.after(speech_ms, lambda until=speech_until: self._finish_speaking_state(until))
         except queue.Empty:
@@ -3647,6 +3733,24 @@ class TerapsApp:
     def _should_show_processing(self) -> bool:
         low = self.last_user_text.lower()
         return any(token in low for token in ["modo foco", "deep work", "pipeline", "git", "resumo", "sistema", "erro", "sensores"])
+
+    @staticmethod
+    def _is_terminal_command(text: str) -> bool:
+        low = TerapsBrain._normalize_text(text)
+        return low.startswith(("comando ", "diagnostico ")) or low in {
+            "sistema",
+            "status do sistema",
+            "autodiagnostico",
+            "auto diagnostico",
+            "verificar teraps",
+            "status git",
+            "pipelines",
+            "terminal",
+            "cmd",
+            "powershell",
+            "abrir terminal",
+            "abra terminal",
+        }
 
     @staticmethod
     def _estimate_speech_duration_ms(text: str) -> int:
