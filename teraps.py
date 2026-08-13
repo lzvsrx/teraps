@@ -18,6 +18,7 @@ import platform
 import queue
 import random
 import re
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -1390,6 +1391,130 @@ class WebSearch:
         webbrowser.open(f"https://www.google.com/search?q={urllib.parse.quote_plus(query)}")
 
 
+class WindowsIntegration:
+    SETTINGS_URIS = {
+        "audio": "ms-settings:sound",
+        "som": "ms-settings:sound",
+        "microfone": "ms-settings:privacy-microphone",
+        "entrada": "ms-settings:sound",
+        "bluetooth": "ms-settings:bluetooth",
+        "wifi": "ms-settings:network-wifi",
+        "rede": "ms-settings:network",
+        "energia": "ms-settings:powersleep",
+        "apps": "ms-settings:appsfeatures",
+        "privacidade": "ms-settings:privacy",
+        "atualizacao": "ms-settings:windowsupdate",
+        "windows update": "ms-settings:windowsupdate",
+    }
+    FOLDERS = {
+        "desktop": "Desktop",
+        "area de trabalho": "Desktop",
+        "área de trabalho": "Desktop",
+        "documentos": "Documents",
+        "downloads": "Downloads",
+        "imagens": "Pictures",
+        "musicas": "Music",
+        "músicas": "Music",
+        "videos": "Videos",
+        "vídeos": "Videos",
+    }
+
+    def __init__(self, config: Config) -> None:
+        self.config = config
+
+    def status(self) -> str:
+        snap = SystemInfo.snapshot(self.config)
+        audio = self._run_text(["powershell", "-NoProfile", "-Command", "Get-CimInstance Win32_SoundDevice | Select-Object -First 5 Name,Status | Format-Table -AutoSize"], timeout=10)
+        mic_hint = "Microfone: usando o dispositivo padrao de entrada exposto pelo Windows."
+        default_apps = [
+            ("explorer", shutil.which("explorer.exe") or "integrado ao Windows"),
+            ("powershell", shutil.which("powershell.exe") or "nao encontrado no PATH"),
+            ("cmd", shutil.which("cmd.exe") or "nao encontrado no PATH"),
+        ]
+        lines = [
+            "Integracao Windows:",
+            f"- Sistema: {snap['os_label']}",
+            f"- Base do Teraps: {BASE_DIR}",
+            f"- Dados locais: {DATA_DIR}",
+            f"- Audio: saida padrao do Windows",
+            f"- {mic_hint}",
+            "- Apps base:",
+        ]
+        lines.extend(f"  {name}: {path}" for name, path in default_apps)
+        if audio:
+            lines.extend(["", "Dispositivos de audio detectados:", audio[:1200]])
+        return "\n".join(lines)
+
+    def open_settings(self, area: str) -> str:
+        key = TerapsBrain._normalize_text(area.strip() or "som")
+        uri = self.SETTINGS_URIS.get(key) or self.SETTINGS_URIS.get("som")
+        try:
+            os.startfile(uri)  # type: ignore[attr-defined]
+            return f"Abri as configuracoes do Windows em: {area or 'som'}."
+        except Exception:
+            return "Nao consegui abrir as configuracoes do Windows automaticamente. Verifique permissoes do sistema."
+
+    def open_folder(self, name: str) -> str:
+        key = TerapsBrain._normalize_text(name)
+        folder_name = self.FOLDERS.get(key)
+        if key in {"teraps", "pasta teraps", "programa", "app"}:
+            target = BASE_DIR
+        elif folder_name:
+            target = Path.home() / folder_name
+        else:
+            target = Path(name.strip().strip('"'))
+        if not target.exists():
+            return f"Nao encontrei a pasta: {target}"
+        try:
+            os.startfile(str(target))  # type: ignore[attr-defined]
+            return f"Abri a pasta {target}."
+        except Exception:
+            try:
+                popen_hidden(["explorer.exe", str(target)])
+                return f"Abri a pasta {target}."
+            except Exception as exc:
+                return f"Nao consegui abrir a pasta pelo Windows: {exc}"
+
+    def diagnostics(self, topic: str = "") -> str:
+        key = TerapsBrain._normalize_text(topic)
+        if key in {"", "geral", "windows"}:
+            return self.status()
+        commands = {
+            "rede": ["ipconfig", "/all"],
+            "ip": ["ipconfig"],
+            "wifi": ["netsh", "wlan", "show", "interfaces"],
+            "rotas": ["route", "print"],
+            "processos": ["tasklist"],
+            "tarefas": ["tasklist"],
+            "disco": ["powershell", "-NoProfile", "-Command", "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,VolumeName,FreeSpace,Size | Format-Table -AutoSize"],
+            "servicos": ["powershell", "-NoProfile", "-Command", "Get-Service | Where-Object {$_.Status -eq 'Running'} | Select-Object -First 35 Name,DisplayName,Status | Format-Table -AutoSize"],
+            "audio": ["powershell", "-NoProfile", "-Command", "Get-CimInstance Win32_SoundDevice | Select-Object Name,Status,Manufacturer | Format-Table -AutoSize"],
+            "energia": ["powercfg", "/GETACTIVESCHEME"],
+            "usuario": ["whoami"],
+        }
+        cmd = commands.get(key)
+        if not cmd:
+            return "Diagnostico Windows disponivel: geral, rede, wifi, rotas, processos, disco, servicos, audio, energia ou usuario."
+        output = self._run_text(cmd, timeout=18)
+        return output or "O diagnostico foi executado, mas nao retornou texto."
+
+    @staticmethod
+    def _run_text(args: list[str], timeout: int = 15) -> str:
+        try:
+            result = run_hidden(args, capture_output=True, timeout=timeout)
+            raw = result.stdout or result.stderr or b""
+            for encoding in ("utf-8", "cp850", "cp1252"):
+                try:
+                    text = raw.decode(encoding).replace("\r\n", "\n").replace("\r", "\n")
+                    return text.strip()[:3500]
+                except UnicodeDecodeError:
+                    continue
+            text = raw.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
+            return text.strip()[:3500]
+        except Exception as exc:
+            return f"Falha ao executar diagnostico: {exc}"
+
+
 class WindowsApps:
     COMMON_ALIASES = {
         "bloco de notas": "notepad.exe",
@@ -1433,20 +1558,32 @@ class WindowsApps:
             )
         custom = self.config["app_aliases"] or {}
         target = custom.get(name.strip().lower()) or self.COMMON_ALIASES.get(name.strip().lower(), name.strip())
+        resolved = self._resolve_app_target(target)
         try:
-            os.startfile(target)  # type: ignore[attr-defined]
+            os.startfile(resolved)  # type: ignore[attr-defined]
             return f"Abrindo {name}."
         except Exception:
             try:
-                popen_hidden([target])
+                popen_hidden([resolved])
                 return f"Tentei iniciar {name}."
             except Exception:
                 webbrowser.open(f"https://www.google.com/search?q={urllib.parse.quote_plus(name + ' app windows')}")
                 return f"Nao encontrei {name} localmente. Abri uma pesquisa para voce."
 
+    @staticmethod
+    def _resolve_app_target(target: str) -> str:
+        clean = str(target).strip().strip('"')
+        path = Path(clean)
+        if path.exists():
+            return str(path)
+        found = shutil.which(clean)
+        return found or clean
+
     def run_safe_command(self, command: str) -> str:
         allowed = {
             "ipconfig": ["ipconfig"],
+            "rede": ["ipconfig", "/all"],
+            "wifi": ["netsh", "wlan", "show", "interfaces"],
             "tarefas": ["tasklist"],
             "processos": ["tasklist"],
             "disco": [
@@ -1461,9 +1598,7 @@ class WindowsApps:
         key = command.strip().lower()
         if key not in allowed:
             return "Por seguranca, executo apenas comandos de diagnostico conhecidos."
-        encoding = "utf-8" if key == "disco" else "cp850"
-        result = run_hidden(allowed[key], capture_output=True, text=True, encoding=encoding, errors="replace", timeout=15)
-        return (result.stdout or result.stderr).strip()[:3500]
+        return WindowsIntegration._run_text(allowed[key], timeout=15)
 
 
 class WorkspaceAutomation:
@@ -2406,6 +2541,7 @@ class TerapsBrain:
         self.memory = memory
         self.web = WebSearch()
         self.apps = WindowsApps(config)
+        self.windows = WindowsIntegration(config)
         self.system = SystemInfo(config)
         self.maintenance = Maintenance()
         self.workspace = WorkspaceAutomation(config, memory)
@@ -2511,8 +2647,28 @@ class TerapsBrain:
             return self.link_app_from_text(clean)
         if low in {"apps vinculados", "aplicativos vinculados", "listar apps"}:
             return self.apps.list_linked_apps()
+        if low in {"status windows", "integracao windows", "integração windows", "windows status"}:
+            return self.windows.status()
+        if low.startswith(("diagnostico windows ", "diagnóstico windows ", "windows diagnostico ", "windows diagnóstico ")):
+            topic = clean.split(" ", 2)[-1]
+            return self.windows.diagnostics(topic)
+        if low in {"diagnostico windows", "diagnóstico windows", "verificar windows"}:
+            return self.windows.diagnostics("geral")
+        if low.startswith(("configuracoes windows ", "configurações windows ", "configurar windows ", "abrir configuracoes ", "abrir configurações ")):
+            area = clean.split(" ", 2)[-1]
+            return self.windows.open_settings(area)
+        if low in {"configurar audio", "configurar áudio", "abrir audio", "abrir áudio", "configuracoes de som", "configurações de som"}:
+            return self.windows.open_settings("audio")
+        if low in {"configurar microfone", "abrir microfone", "permissao microfone", "permissão microfone"}:
+            return self.windows.open_settings("microfone")
+        if low.startswith(("abrir pasta ", "abra pasta ", "pasta ")):
+            folder = re.sub(r"^(abrir pasta|abra pasta|pasta)\s+", "", clean, flags=re.IGNORECASE)
+            return self.windows.open_folder(folder)
         if low.startswith(("abra ", "abrir ", "inicie ", "execute ")):
             app = clean.split(" ", 1)[1]
+            app_key = self._normalize_text(app)
+            if app_key in WindowsIntegration.FOLDERS or app_key in {"teraps", "pasta teraps", "programa", "app"}:
+                return self.windows.open_folder(app)
             return self.apps.open_app(app)
         if low.startswith(("comando ", "diagnostico ", "diagnóstico ")):
             cmd = clean.split(" ", 1)[1]
@@ -2800,6 +2956,30 @@ class TerapsBrain:
             return self.life_work.diagnostic()
         if key in {"sensores", "seguranca", "status da casa", "ambiente"}:
             return self.home.security_status()
+        if key in {"status windows", "integracao windows", "windows status"}:
+            return self.windows.status()
+        if key.startswith(("diagnostico windows ", "windows diagnostico ")):
+            return self.windows.diagnostics(key.split(" ", 2)[-1])
+        if key in {"diagnostico windows", "verificar windows"}:
+            return self.windows.diagnostics("geral")
+        if key.startswith(("configuracoes windows ", "configurar windows ", "abrir configuracoes ")):
+            return self.windows.open_settings(key.split(" ", 2)[-1])
+        if key in {"configurar audio", "abrir audio", "configuracoes de som"}:
+            return self.windows.open_settings("audio")
+        if key in {"configurar microfone", "abrir microfone", "permissao microfone"}:
+            return self.windows.open_settings("microfone")
+        if key.startswith(("abrir pasta ", "abra pasta ", "pasta ")):
+            folder = re.sub(r"^(abrir pasta|abra pasta|pasta)\s+", "", clean, flags=re.IGNORECASE)
+            return self.windows.open_folder(folder)
+        if key.startswith(("abra ", "abrir ", "inicie ", "execute ")):
+            app = clean.split(" ", 1)[1]
+            app_key = self._normalize_text(app)
+            if app_key in WindowsIntegration.FOLDERS or app_key in {"teraps", "pasta teraps", "programa", "app"}:
+                return self.windows.open_folder(app)
+            return self.apps.open_app(app)
+        if key.startswith(("comando ", "diagnostico ")):
+            cmd = clean.split(" ", 1)[1]
+            return self.apps.run_safe_command(cmd)
         if key in {"ponte 3d", "ponte holografica"}:
             self.config["hologram_bridge_enabled"] = True
             return self.bridge.send_state("idle", "neutral")
@@ -2866,6 +3046,7 @@ class TerapsBrain:
             "Nucleo:\n"
             "- modo completo / status completo / central comandos\n"
             "- terminal interno / interface limpa / painel sistema / painel memoria\n"
+            "- status windows / diagnostico windows rede / configurar audio / configurar microfone\n"
             "- sistema / autodiagnostico / autorreparo / manutencao automatica\n\n"
             "Voz e microfone:\n"
             "- voz teraps / voz neural / voz windows / teste voz / saida de audio\n"
@@ -3222,6 +3403,8 @@ class TerapsBrain:
             "- me lembre de revisar o projeto as 18:30\n"
             "- lembretes / tarefas\n"
             "- sistema\n"
+            "- status windows / diagnostico windows audio / abrir downloads\n"
+            "- configurar audio / configurar microfone\n"
             "- terminal interno / interface limpa\n"
             "- painel sistema / painel memoria\n"
             "- perfil hardware / adaptar hardware\n"

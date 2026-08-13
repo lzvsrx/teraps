@@ -53,6 +53,12 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `lembre que eu prefiro respostas curtas`
 - `o que voce lembra`
 - `sistema`
+- `status windows`
+- `diagnostico windows rede`
+- `diagnostico windows audio`
+- `configurar audio`
+- `configurar microfone`
+- `abrir downloads`
 - `terminal interno`
 - `interface limpa`
 - `painel sistema`
