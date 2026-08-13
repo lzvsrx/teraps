@@ -6,6 +6,8 @@ A voz do Teraps usa a saida padrao de audio do Windows. Se voce mudar a saida do
 
 A interface nao depende de botoes de comando: digite e pressione `Enter`; use `Ctrl+Espaco` ou duplo clique no campo de entrada para falar pelo microfone padrao do Windows.
 
+Por padrao, o Teraps usa um modo discreto: detalhes tecnicos ficam nos bastidores e a tela mostra apenas o essencial para conversar, falar, ouvir e executar tarefas. Use `modo tecnico` quando quiser ver mais informacoes de voz, hardware e sistema, ou `modo discreto` para voltar ao fluxo limpo.
+
 ## Como executar
 
 ```powershell
@@ -41,6 +43,8 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `ajuda`
 - `central comandos`
 - `modo completo`
+- `modo discreto`
+- `modo tecnico`
 - `status completo`
 - `teste unreal fala`
 - `status github`

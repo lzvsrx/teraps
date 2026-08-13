@@ -180,6 +180,7 @@ class Config:
         "adaptive_last_profile": {},
         "adaptive_visual_scale": 1.0,
         "adaptive_last_applied": "",
+        "technical_ui_enabled": False,
     }
 
     def __init__(self) -> None:
@@ -2976,7 +2977,7 @@ class AutoSystem:
             if top or suggestions:
                 prompt = suggestions[0][1] if suggestions else "resumo executivo"
                 messages.append(
-                    "Sugestao automatica: pelo seu uso recente, posso ajudar agora com "
+                    "Pelo seu uso recente, posso ajudar agora com "
                     f"'{prompt}'."
                 )
                 self.config["last_proactive_summary"] = now.isoformat(timespec="seconds")
@@ -3111,6 +3112,12 @@ class TerapsBrain:
             return self.help_text()
         if low in {"central comandos", "comandos completos", "todos comandos", "menu teraps", "painel comandos"}:
             return self.command_center_text()
+        if low in {"modo discreto", "interface discreta", "modo limpo", "interface limpa simples"}:
+            self.config["technical_ui_enabled"] = False
+            return "Modo discreto ativado. Vou manter detalhes tecnicos nos bastidores e mostrar so o essencial."
+        if low in {"modo tecnico", "modo técnico", "interface tecnica", "interface técnica", "mostrar detalhes tecnicos"}:
+            self.config["technical_ui_enabled"] = True
+            return "Modo tecnico ativado. Vou mostrar mais detalhes de sistema, voz e hardware quando fizer sentido."
         if low in {"ativar modo completo", "modo completo", "modo jarvis", "modo teraps completo", "preparar teraps"}:
             return self.activate_complete_mode()
         if low in {"status completo", "status geral", "diagnostico completo", "diagnÃ³stico completo", "estado completo"}:
@@ -3426,6 +3433,12 @@ class TerapsBrain:
             return self.help_text()
         if key in {"central comandos", "comandos completos", "todos comandos", "menu teraps", "painel comandos"}:
             return self.command_center_text()
+        if key in {"modo discreto", "interface discreta", "modo limpo", "interface limpa simples"}:
+            self.config["technical_ui_enabled"] = False
+            return "Modo discreto ativado. Vou manter detalhes tecnicos nos bastidores e mostrar so o essencial."
+        if key in {"modo tecnico", "interface tecnica", "mostrar detalhes tecnicos"}:
+            self.config["technical_ui_enabled"] = True
+            return "Modo tecnico ativado. Vou mostrar mais detalhes de sistema, voz e hardware quando fizer sentido."
         if key in {"ativar modo completo", "modo completo", "modo jarvis", "modo teraps completo", "preparar teraps"}:
             return self.activate_complete_mode()
         if key in {"status completo", "status geral", "diagnostico completo", "estado completo"}:
@@ -3631,6 +3644,7 @@ class TerapsBrain:
             "Central de Comandos Teraps:\n"
             "Nucleo:\n"
             "- modo completo / status completo / central comandos\n"
+            "- modo discreto / modo tecnico\n"
             "- terminal interno / interface limpa / painel sistema / painel memoria\n"
             "- status windows / diagnostico windows rede / configurar audio / configurar microfone\n"
             "- ler area de transferencia / copiar TEXTO / capturar tela / processos pesados\n"
@@ -3984,6 +3998,7 @@ class TerapsBrain:
             "Comandos principais:\n"
             "- central comandos / comandos completos\n"
             "- modo completo / status completo\n"
+            "- modo discreto / modo tecnico\n"
             "- teste unreal fala / status github / checklist release\n"
             "- pesquise energia solar residencial\n"
             "- abra calculadora\n"
@@ -4473,7 +4488,11 @@ class TerapsApp:
         voice_mode = "neural" if getattr(self, "voice", None) and self.voice.neural_available and self.config["voice_engine"] == "neural" else ("Windows" if getattr(self, "voice", None) and self.voice.available else "texto")
         audio_ok = getattr(self, "voice", None) and (self.voice.available or self.voice.neural_available)
         audio_status = "audio: Windows padrao" if audio_ok else "audio: texto"
-        return f"Perfil: {self.profile.name} | Voz: {voice_mode} | {audio_status} | {mic_status}"
+        if self.config["technical_ui_enabled"]:
+            return f"Perfil: {self.profile.name} | Voz: {voice_mode} | {audio_status} | {mic_status}"
+        voice_text = "voz ativa" if audio_ok else "texto"
+        mic_text = "microfone pronto" if getattr(self, "microphone", None) and self.microphone.available else "microfone indisponivel"
+        return f"Online | {voice_text} | {mic_text}"
 
     def refresh_adaptive_profile(self) -> None:
         try:
@@ -4518,7 +4537,7 @@ class TerapsApp:
         self.system_panel = self._create_hidden_console("Sistema")
         self.memory_panel = self._create_hidden_console("Memoria")
 
-        self._write_panel(self.chat, "Teraps: Sistema online. Digite e pressione Enter, ou use Ctrl+Espaco para falar.\n\n")
+        self._write_panel(self.chat, "Teraps: Estou pronta. Pode digitar ou falar comigo.\n\n")
         self._write_panel(self.terminal, "Terminal interno pronto. Nenhum prompt externo sera aberto pelo Teraps.\n\n")
         self.refresh_system_panel()
         self.refresh_memory_panel()
@@ -4527,7 +4546,7 @@ class TerapsApp:
         input_frame.pack(fill="x", padx=14, pady=(0, 14))
         self.entry = Entry(input_frame, bg="#02070a", fg="#dffeff", insertbackground="#42f5ff", relief="flat", font=("Segoe UI", 11))
         self.entry.pack(side=LEFT, fill="x", expand=True, ipady=10)
-        self.entry_placeholder = "Digite e pressione Enter. Ctrl+Espaco ou duplo clique para falar."
+        self.entry_placeholder = "Digite aqui ou use Ctrl+Espaco para falar."
         self._set_entry_placeholder()
         self.entry.bind("<FocusIn>", self._entry_focus_in)
         self.entry.bind("<FocusOut>", self._entry_focus_out)
@@ -4693,6 +4712,7 @@ class TerapsApp:
                 self.append_chat("Teraps", clean_response)
                 if self._is_terminal_command(self.last_user_text) or is_auto:
                     self.append_terminal("saida", clean_response)
+                self.status.set(self._status_text())
                 self.refresh_system_panel()
                 self.refresh_memory_panel()
                 self.say(clean_response)
