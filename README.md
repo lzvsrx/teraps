@@ -121,7 +121,7 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - Automacao de workspace: modo foco, Git, pipeline local e abertura de IDE.
 - Smart home: cenas simuladas por padrao ou Home Assistant quando configurado.
 - Rotinas: resumo executivo, inicio do dia, descanso noturno e sensores ambientais.
-- Avatar Unreal Engine: projeto em `unreal/TerapsHologram` com cena holografica 3D, materiais translucidos, particulas orbitais e ponte TCP local para receber estados do Teraps.
+- Avatar Unreal Engine: projeto em `unreal/TerapsHologram` com cena holografica 3D, materiais translucidos, particulas orbitais, olhos/pupilas/boca 3D, gestos, microexpressoes e ponte TCP local para receber estados, texto e duracao de fala do Teraps.
 - Ponte 3D opcional: envia estado para renderizador externo quando ativada; o renderizador Unreal usa `127.0.0.1:8765`.
 - Aprendizado automatico: consolida preferencias, temas, sugestoes e estado do programa no SQLite.
 - Aprendizado pessoal automatico: entende frases como `eu gosto de...`, `prefiro...`, `trabalho com...` e salva isso sem precisar usar `lembre que`.

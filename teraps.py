@@ -2144,8 +2144,13 @@ class HologramBridge:
         self.available = False
         self.process: subprocess.Popen | None = None
 
-    def send_state(self, state: str, emotion: str = "neutral") -> str:
-        self.last_state = {"state": state, "emotion": emotion, "timestamp": _dt.datetime.now().isoformat(timespec="seconds")}
+    def send_state(self, state: str, emotion: str = "neutral", metadata: dict | None = None) -> str:
+        self.last_state = {
+            "state": state,
+            "emotion": emotion,
+            "timestamp": _dt.datetime.now().isoformat(timespec="seconds"),
+            "metadata": metadata or {},
+        }
         if not self.config["hologram_bridge_enabled"]:
             return "Ponte 3D desativada; estado aplicado no avatar local."
         try:
@@ -2153,7 +2158,7 @@ class HologramBridge:
 
             host = str(self.config["hologram_bridge_host"])
             port = int(self.config["hologram_bridge_port"])
-            payload = json.dumps({"type": "TERAPS_STATE", "data": self.last_state}).encode("utf-8")
+            payload = json.dumps({"type": "TERAPS_STATE", "data": self.last_state}, ensure_ascii=False).encode("utf-8")
             with socket.create_connection((host, port), timeout=1.5) as sock:
                 sock.sendall(payload)
             self.available = True
@@ -3493,6 +3498,7 @@ class TerapsApp:
         self.poll_responses()
         welcome = "Teraps online. Sistema pronto."
         self.avatar.start_speaking(welcome, self._estimate_speech_duration_ms(welcome))
+        self.bridge.send_state("speaking", "warm", {"text": welcome, "duration_ms": self._estimate_speech_duration_ms(welcome), "source": "startup"})
         self.say(welcome)
 
     def detect_profile(self) -> HardwareProfile:
@@ -3709,7 +3715,11 @@ class TerapsApp:
                 is_auto = response.startswith("[AUTO] ")
                 clean_response = response[7:] if is_auto else response
                 speech_ms = self._estimate_speech_duration_ms(clean_response)
-                self.bridge.send_state("speaking", "warm")
+                self.bridge.send_state(
+                    "speaking",
+                    "warm",
+                    {"text": clean_response, "duration_ms": speech_ms, "source": "teraps_voice"},
+                )
                 self.avatar.start_speaking(clean_response, speech_ms)
                 speech_until = self.avatar.speech_until
                 self.append_chat("Teraps", clean_response)
