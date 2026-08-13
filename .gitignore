@@ -10,3 +10,7 @@ dist/*
 !assets/teraps.png
 !assets/teraps_avatar.png
 !assets/teraps_icon_avatar.png
+unreal/**/Binaries/
+unreal/**/DerivedDataCache/
+unreal/**/Intermediate/
+unreal/**/Saved/

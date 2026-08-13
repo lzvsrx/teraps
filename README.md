@@ -93,6 +93,9 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `configurar ide code`
 - `configurar home assistant http://localhost:8123/api TOKEN`
 - `ponte 3d`
+- `iniciar unreal`
+- `status unreal`
+- `configurar unreal "C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe"`
 - `aprendizado automatico`
 - `estado automatico`
 - `verificar atualizacao`
@@ -107,7 +110,8 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - Automacao de workspace: modo foco, Git, pipeline local e abertura de IDE.
 - Smart home: cenas simuladas por padrao ou Home Assistant quando configurado.
 - Rotinas: resumo executivo, inicio do dia, descanso noturno e sensores ambientais.
-- Ponte 3D opcional: envia estado para renderizador externo quando ativada.
+- Avatar Unreal Engine: projeto em `unreal/TerapsHologram` com cena holografica 3D, materiais translucidos, particulas orbitais e ponte TCP local para receber estados do Teraps.
+- Ponte 3D opcional: envia estado para renderizador externo quando ativada; o renderizador Unreal usa `127.0.0.1:8765`.
 - Aprendizado automatico: consolida preferencias, temas, sugestoes e estado do programa no SQLite.
 - Aprendizado pessoal automatico: entende frases como `eu gosto de...`, `prefiro...`, `trabalho com...` e salva isso sem precisar usar `lembre que`.
 - Lembretes e tarefas locais: grava lembretes no SQLite e avisa dentro da propria conversa quando vencem.
@@ -124,6 +128,8 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `criar_executavel.ps1`: gera `dist\Teraps.exe` com PyInstaller.
 - `assets/teraps.ico`: icone da janela e do executavel.
 - `assets/teraps_icon_avatar.png`: versao PNG do icone baseada no avatar.
+- `unreal/TerapsHologram/TerapsHologram.uproject`: projeto Unreal Engine para o avatar 3D.
+- `unreal/TerapsHologram/Content/Python/teraps_unreal_bridge.py`: script que cria a cena 3D e recebe comandos do Teraps.
 - `teraps_data/memory.sqlite3`: banco principal com memoria, historico, configuracoes, sugestoes, lembretes, automacoes, conteudos YouTube e aprendizado de temas.
 - `teraps_data/config.json`: arquivo antigo, importado automaticamente quando existir; a configuracao ativa fica no SQLite.
 - `teraps_data/teraps.log`: registro de erros e diagnosticos.

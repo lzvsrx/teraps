@@ -162,6 +162,9 @@ class Config:
         "hologram_bridge_enabled": False,
         "hologram_bridge_host": "127.0.0.1",
         "hologram_bridge_port": 8765,
+        "unreal_editor_path": r"C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe",
+        "unreal_project_path": str(BASE_DIR / "unreal" / "TerapsHologram" / "TerapsHologram.uproject"),
+        "unreal_bridge_script": str(BASE_DIR / "unreal" / "TerapsHologram" / "Content" / "Python" / "teraps_unreal_bridge.py"),
         "auto_learning_enabled": True,
         "auto_maintenance_enabled": True,
         "auto_update_check_enabled": True,
@@ -1956,6 +1959,7 @@ class HologramBridge:
         self.config = config
         self.last_state = {"state": "idle", "emotion": "neutral"}
         self.available = False
+        self.process: subprocess.Popen | None = None
 
     def send_state(self, state: str, emotion: str = "neutral") -> str:
         self.last_state = {"state": state, "emotion": emotion, "timestamp": _dt.datetime.now().isoformat(timespec="seconds")}
@@ -1974,6 +1978,90 @@ class HologramBridge:
         except Exception:
             self.available = False
             return "Renderizador 3D nao conectado; usando avatar local."
+
+    def launch_unreal(self) -> str:
+        editor = self._editor_path()
+        project = self._project_path()
+        script = self._script_path()
+        if not editor or not editor.exists():
+            return "Nao encontrei o UnrealEditor.exe. Configure com: configurar unreal caminho_do_UnrealEditor.exe"
+        if not project or not project.exists():
+            return f"Nao encontrei o projeto Unreal em {project}."
+        if not script or not script.exists():
+            return f"Nao encontrei o script da ponte Unreal em {script}."
+        if self.process and self.process.poll() is None:
+            self.config["hologram_bridge_enabled"] = True
+            return "Renderizador Unreal ja esta aberto; ponte 3D ativada."
+        try:
+            args = [
+                str(editor),
+                str(project),
+                f"-ExecutePythonScript={script}",
+                "-NoSplash",
+                "-log",
+            ]
+            self.process = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+            self.config["hologram_bridge_enabled"] = True
+            return (
+                "Unreal Engine iniciado para o avatar 3D do Teraps. "
+                "Aguarde a cena carregar; a ponte local ficara em 127.0.0.1:"
+                f"{self.config['hologram_bridge_port']}."
+            )
+        except Exception as exc:
+            logging.exception("Falha ao iniciar Unreal.")
+            return f"Nao consegui iniciar o Unreal Engine: {exc}"
+
+    def status(self) -> str:
+        editor = self._editor_path()
+        project = self._project_path()
+        script = self._script_path()
+        return (
+            "Avatar 3D Unreal:\n"
+            f"- UnrealEditor: {editor if editor else 'nao encontrado'}\n"
+            f"- Projeto: {project} ({'ok' if project and project.exists() else 'faltando'})\n"
+            f"- Script ponte: {script} ({'ok' if script and script.exists() else 'faltando'})\n"
+            f"- Ponte: {self.config['hologram_bridge_host']}:{self.config['hologram_bridge_port']}\n"
+            f"- Estado: {self.last_state.get('state', 'idle')} / {self.last_state.get('emotion', 'neutral')}"
+        )
+
+    def _editor_path(self) -> Path | None:
+        configured = Path(str(self.config["unreal_editor_path"] or ""))
+        if configured.exists():
+            return configured
+        epic = Path(r"C:\Program Files\Epic Games")
+        candidates = sorted(epic.glob(r"UE_*\Engine\Binaries\Win64\UnrealEditor.exe"), reverse=True)
+        if candidates:
+            self.config["unreal_editor_path"] = str(candidates[0])
+            return candidates[0]
+        return None
+
+    def _project_path(self) -> Path | None:
+        configured = Path(str(self.config["unreal_project_path"] or ""))
+        candidates = [
+            configured,
+            BASE_DIR / "unreal" / "TerapsHologram" / "TerapsHologram.uproject",
+            BASE_DIR.parent / "unreal" / "TerapsHologram" / "TerapsHologram.uproject",
+            RESOURCE_DIR / "unreal" / "TerapsHologram" / "TerapsHologram.uproject",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                self.config["unreal_project_path"] = str(candidate)
+                return candidate
+        return configured
+
+    def _script_path(self) -> Path | None:
+        configured = Path(str(self.config["unreal_bridge_script"] or ""))
+        candidates = [
+            configured,
+            BASE_DIR / "unreal" / "TerapsHologram" / "Content" / "Python" / "teraps_unreal_bridge.py",
+            BASE_DIR.parent / "unreal" / "TerapsHologram" / "Content" / "Python" / "teraps_unreal_bridge.py",
+            RESOURCE_DIR / "unreal" / "TerapsHologram" / "Content" / "Python" / "teraps_unreal_bridge.py",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                self.config["unreal_bridge_script"] = str(candidate)
+                return candidate
+        return configured
 
 
 class AutoSystem:
@@ -2270,10 +2358,19 @@ class TerapsBrain:
         if low in {"avatar 3d", "modo 3d", "holograma 3d", "status avatar"}:
             self.config["avatar_3d_mode"] = True
             return (
-                "Avatar 3D holografico ativo: profundidade por camadas, parallax, particulas em volume, "
-                "brilho dinamico e fala por visemas. Para 3D real com malha e ossos, a ponte 3D esta preparada "
-                "para receber um modelo GLB ou VRM rigado."
+                "Avatar 3D holografico ativo no modo local e preparado para Unreal Engine. "
+                "Use 'iniciar unreal' para abrir o renderizador 3D com cena holografica controlada pelo Teraps."
             )
+        if low.startswith("configurar unreal "):
+            editor = clean[len("configurar unreal ") :].strip().strip('"')
+            if not Path(editor).exists():
+                return f"Nao encontrei esse UnrealEditor.exe: {editor}"
+            self.config["unreal_editor_path"] = editor
+            return f"Unreal Engine configurado em {editor}."
+        if low in {"iniciar unreal", "abrir unreal", "avatar unreal", "holograma unreal", "renderizador unreal"}:
+            return self.bridge.launch_unreal()
+        if low in {"status unreal", "status avatar unreal", "ponte unreal"}:
+            return self.bridge.status()
         if low.startswith("configurar workspace "):
             path = clean[len("configurar workspace ") :].strip().strip('"')
             if not Path(path).exists():
@@ -2479,10 +2576,13 @@ class TerapsBrain:
         if key in {"avatar 3d", "modo 3d", "holograma 3d", "status avatar"}:
             self.config["avatar_3d_mode"] = True
             return (
-                "Avatar 3D holografico ativo: profundidade por camadas, parallax, particulas em volume, "
-                "brilho dinamico e fala por visemas. Para 3D real com malha e ossos, a ponte 3D esta preparada "
-                "para receber um modelo GLB ou VRM rigado."
+                "Avatar 3D holografico ativo no modo local e preparado para Unreal Engine. "
+                "Use 'iniciar unreal' para abrir o renderizador 3D com cena holografica controlada pelo Teraps."
             )
+        if key in {"iniciar unreal", "abrir unreal", "avatar unreal", "holograma unreal", "renderizador unreal"}:
+            return self.bridge.launch_unreal()
+        if key in {"status unreal", "status avatar unreal", "ponte unreal"}:
+            return self.bridge.status()
         if "data" in key or "dia e hoje" in key:
             return "Hoje e " + _dt.datetime.now().strftime("%d/%m/%Y") + "."
         if key in {"aprendizado automatico", "perfil aprendido", "o que voce aprendeu"}:
@@ -2722,6 +2822,8 @@ class TerapsBrain:
             "- resumo executivo\n"
             "- sensores / status da casa\n"
             "- avatar 3d / status avatar\n"
+            "- iniciar unreal / status unreal\n"
+            "- configurar unreal \"C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Binaries\\Win64\\UnrealEditor.exe\"\n"
             "- status git / pipelines\n"
             "- ajuda programador / ajuda designer\n"
             "- plano app minha ideia\n"
@@ -3116,6 +3218,7 @@ class TerapsApp:
         self.memory = Memory()
         self.voice = Voice(self.config)
         self.microphone = Microphone(self.config)
+        self.bridge = HologramBridge(self.config)
         self.brain = TerapsBrain(self.config, self.memory)
         self.auto_system = AutoSystem(
             self.config,
@@ -3255,6 +3358,7 @@ class TerapsApp:
         self.last_user_text = text
         self.append_chat("Voce", text)
         self.avatar.set_state(processing=True)
+        self.bridge.send_state("thinking", "focused")
         threading.Thread(target=self._think, args=(text,), daemon=True).start()
 
     def listen(self) -> None:
@@ -3264,6 +3368,7 @@ class TerapsApp:
             self.say(msg)
             return
         self.avatar.set_state(listening=True)
+        self.bridge.send_state("listening", "attentive")
         self.append_chat("Teraps", "Ouvindo pelo microfone padrao do Windows...")
         threading.Thread(target=self._listen_worker, daemon=True).start()
 
@@ -3276,6 +3381,7 @@ class TerapsApp:
 
     def _listen_failed(self, message: str) -> None:
         self.avatar.set_state(listening=False)
+        self.bridge.send_state("idle", "clarify")
         final_message = message or "Nao consegui entender o audio. Pode explicar de outro jeito o que voce quer que eu faca?"
         self.append_chat("Teraps", final_message)
         self.say(final_message)
@@ -3293,17 +3399,22 @@ class TerapsApp:
                 is_auto = response.startswith("[AUTO] ")
                 clean_response = response[7:] if is_auto else response
                 speech_ms = self._estimate_speech_duration_ms(clean_response)
+                self.bridge.send_state("speaking", "warm")
                 self.avatar.start_speaking(clean_response, speech_ms)
                 speech_until = self.avatar.speech_until
                 self.append_chat("Teraps", clean_response)
                 self.say(clean_response)
-                self.root.after(speech_ms, lambda until=speech_until: self.avatar.finish_speaking_if_current(until))
+                self.root.after(speech_ms, lambda until=speech_until: self._finish_speaking_state(until))
         except queue.Empty:
             pass
         self.root.after(100, self.poll_responses)
 
     def say(self, text: str) -> None:
         self.voice.speak(text)
+
+    def _finish_speaking_state(self, speech_until: float) -> None:
+        self.avatar.finish_speaking_if_current(speech_until)
+        self.bridge.send_state("idle", "neutral")
 
     def _should_show_processing(self) -> bool:
         low = self.last_user_text.lower()
