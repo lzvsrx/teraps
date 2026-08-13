@@ -1439,6 +1439,16 @@ class WindowsIntegration:
         "atualizacao": "ms-settings:windowsupdate",
         "windows update": "ms-settings:windowsupdate",
     }
+    APP_URIS = {
+        "camera": "microsoft.windows.camera:",
+        "câmera": "microsoft.windows.camera:",
+        "gravador": "ms-callrecording:",
+        "gravador de som": "ms-callrecording:",
+        "email": "mailto:",
+        "mapas": "bingmaps:",
+        "loja": "ms-windows-store:",
+        "store": "ms-windows-store:",
+    }
     FOLDERS = {
         "desktop": "Desktop",
         "area de trabalho": "Desktop",
@@ -1487,6 +1497,17 @@ class WindowsIntegration:
         except Exception:
             return "Nao consegui abrir as configuracoes do Windows automaticamente. Verifique permissoes do sistema."
 
+    def open_windows_app(self, app_name: str) -> str:
+        key = TerapsBrain._normalize_text(app_name.strip())
+        uri = self.APP_URIS.get(key)
+        if not uri:
+            return "Apps nativos disponiveis: camera, gravador de som, email, mapas e loja."
+        try:
+            os.startfile(uri)  # type: ignore[attr-defined]
+            return f"Abri o app do Windows: {app_name}."
+        except Exception:
+            return f"Nao consegui abrir {app_name}. O app pode nao estar instalado ou o URI pode estar bloqueado."
+
     def open_folder(self, name: str) -> str:
         key = TerapsBrain._normalize_text(name)
         folder_name = self.FOLDERS.get(key)
@@ -1530,6 +1551,68 @@ class WindowsIntegration:
             return "Diagnostico Windows disponivel: geral, rede, wifi, rotas, processos, disco, servicos, audio, energia ou usuario."
         output = self._run_text(cmd, timeout=18)
         return output or "O diagnostico foi executado, mas nao retornou texto."
+
+    def read_clipboard(self) -> str:
+        text = self._run_text(["powershell", "-NoProfile", "-Command", "Get-Clipboard -Raw"], timeout=8)
+        if not text:
+            return "A area de transferencia esta vazia ou contem um formato que nao e texto."
+        return "Area de transferencia:\n" + text[:2500]
+
+    def copy_to_clipboard(self, text: str) -> str:
+        if not text.strip():
+            return "Diga o texto que devo copiar para a area de transferencia."
+        temp_file = DATA_DIR / "clipboard_pending.txt"
+        try:
+            temp_file.write_text(text, encoding="utf-8")
+            safe_path = str(temp_file).replace("'", "''")
+            ps = f"Set-Clipboard -Value (Get-Content -Raw -LiteralPath '{safe_path}')"
+            run_hidden(["powershell", "-NoProfile", "-Command", ps], timeout=8)
+            return "Copiei o texto para a area de transferencia."
+        except Exception as exc:
+            return f"Nao consegui copiar para a area de transferencia: {exc}"
+        finally:
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
+
+    def save_screenshot(self) -> str:
+        try:
+            from PIL import ImageGrab  # type: ignore
+
+            target_dir = DATA_DIR / "screenshots"
+            target_dir.mkdir(exist_ok=True)
+            target = target_dir / f"teraps_screenshot_{_dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+            image = ImageGrab.grab()
+            image.save(target)
+            return f"Captura de tela salva em {target}."
+        except Exception as exc:
+            return f"Nao consegui capturar a tela: {exc}"
+
+    def heavy_processes(self) -> str:
+        command = (
+            "Get-Process | Sort-Object WorkingSet64 -Descending | "
+            "Select-Object -First 12 ProcessName,Id,@{Name='MemMB';Expression={[math]::Round($_.WorkingSet64/1MB,1)}} | "
+            "Format-Table -AutoSize"
+        )
+        output = self._run_text(["powershell", "-NoProfile", "-Command", command], timeout=12)
+        return "Processos consumindo mais memoria:\n" + (output or "Nenhum processo retornado.")
+
+    def export_memory(self, memory: "Memory") -> str:
+        target_dir = DATA_DIR / "exports"
+        target_dir.mkdir(exist_ok=True)
+        target = target_dir / f"teraps_memoria_{_dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        payload = {
+            "exported_at": _dt.datetime.now().isoformat(timespec="seconds"),
+            "memories": [
+                {"kind": kind, "key": key, "value": value}
+                for kind, key, value in memory.recall("", limit=200)
+            ],
+            "learned_profile": memory.learned_profile_summary(),
+            "auto_state": memory.get_state("auto_learning", {}),
+        }
+        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return f"Memoria exportada em {target}."
 
     @staticmethod
     def _run_text(args: list[str], timeout: int = 15) -> str:
@@ -2694,6 +2777,21 @@ class TerapsBrain:
             return self.windows.open_settings("audio")
         if low in {"configurar microfone", "abrir microfone", "permissao microfone", "permissão microfone"}:
             return self.windows.open_settings("microfone")
+        if low in {"ler area de transferencia", "ler área de transferência", "colar clipboard", "ver clipboard"}:
+            return self.windows.read_clipboard()
+        if low.startswith(("copiar ", "copie ")):
+            text = clean.split(" ", 1)[1]
+            return self.windows.copy_to_clipboard(text)
+        if low in {"capturar tela", "print da tela", "tirar print", "screenshot"}:
+            return self.windows.save_screenshot()
+        if low in {"abrir camera", "abrir câmera", "camera", "câmera"}:
+            return self.windows.open_windows_app("camera")
+        if low in {"abrir gravador", "gravador de som", "abrir gravador de som"}:
+            return self.windows.open_windows_app("gravador de som")
+        if low in {"processos pesados", "apps pesados", "uso de memoria", "uso de memória"}:
+            return self.windows.heavy_processes()
+        if low in {"exportar memoria", "exportar memória", "backup memoria", "backup memória"}:
+            return self.windows.export_memory(self.memory)
         if low.startswith(("abrir pasta ", "abra pasta ", "pasta ")):
             folder = re.sub(r"^(abrir pasta|abra pasta|pasta)\s+", "", clean, flags=re.IGNORECASE)
             return self.windows.open_folder(folder)
@@ -2702,6 +2800,8 @@ class TerapsBrain:
             app_key = self._normalize_text(app)
             if app_key in WindowsIntegration.FOLDERS or app_key in {"teraps", "pasta teraps", "programa", "app"}:
                 return self.windows.open_folder(app)
+            if app_key in WindowsIntegration.APP_URIS:
+                return self.windows.open_windows_app(app)
             return self.apps.open_app(app)
         if low.startswith(("comando ", "diagnostico ", "diagnóstico ")):
             cmd = clean.split(" ", 1)[1]
@@ -3001,6 +3101,21 @@ class TerapsBrain:
             return self.windows.open_settings("audio")
         if key in {"configurar microfone", "abrir microfone", "permissao microfone"}:
             return self.windows.open_settings("microfone")
+        if key in {"ler area de transferencia", "colar clipboard", "ver clipboard"}:
+            return self.windows.read_clipboard()
+        if key.startswith(("copiar ", "copie ")):
+            text = clean.split(" ", 1)[1]
+            return self.windows.copy_to_clipboard(text)
+        if key in {"capturar tela", "print da tela", "tirar print", "screenshot"}:
+            return self.windows.save_screenshot()
+        if key in {"abrir camera", "camera"}:
+            return self.windows.open_windows_app("camera")
+        if key in {"abrir gravador", "gravador de som", "abrir gravador de som"}:
+            return self.windows.open_windows_app("gravador de som")
+        if key in {"processos pesados", "apps pesados", "uso de memoria"}:
+            return self.windows.heavy_processes()
+        if key in {"exportar memoria", "backup memoria"}:
+            return self.windows.export_memory(self.memory)
         if key.startswith(("abrir pasta ", "abra pasta ", "pasta ")):
             folder = re.sub(r"^(abrir pasta|abra pasta|pasta)\s+", "", clean, flags=re.IGNORECASE)
             return self.windows.open_folder(folder)
@@ -3009,6 +3124,8 @@ class TerapsBrain:
             app_key = self._normalize_text(app)
             if app_key in WindowsIntegration.FOLDERS or app_key in {"teraps", "pasta teraps", "programa", "app"}:
                 return self.windows.open_folder(app)
+            if app_key in WindowsIntegration.APP_URIS:
+                return self.windows.open_windows_app(app)
             return self.apps.open_app(app)
         if key.startswith(("comando ", "diagnostico ")):
             cmd = clean.split(" ", 1)[1]
@@ -3080,6 +3197,8 @@ class TerapsBrain:
             "- modo completo / status completo / central comandos\n"
             "- terminal interno / interface limpa / painel sistema / painel memoria\n"
             "- status windows / diagnostico windows rede / configurar audio / configurar microfone\n"
+            "- ler area de transferencia / copiar TEXTO / capturar tela / processos pesados\n"
+            "- abrir camera / abrir gravador / exportar memoria\n"
             "- sistema / autodiagnostico / autorreparo / manutencao automatica\n\n"
             "Voz e microfone:\n"
             "- voz teraps / voz neural / voz windows / teste voz / saida de audio\n"
@@ -3438,6 +3557,8 @@ class TerapsBrain:
             "- sistema\n"
             "- status windows / diagnostico windows audio / abrir downloads\n"
             "- configurar audio / configurar microfone\n"
+            "- ler area de transferencia / copiar texto importante\n"
+            "- capturar tela / processos pesados / abrir camera / exportar memoria\n"
             "- terminal interno / interface limpa\n"
             "- painel sistema / painel memoria\n"
             "- perfil hardware / adaptar hardware\n"
