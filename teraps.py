@@ -31,7 +31,7 @@ import urllib.request
 import webbrowser
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import BOTH, END, LEFT, RIGHT, Canvas, Entry, Frame, Label, Tk, Button, Text, StringVar, ttk
+from tkinter import BOTH, END, LEFT, RIGHT, Canvas, Entry, Frame, Label, Tk, Text, StringVar, ttk
 
 try:
     from PIL import Image, ImageTk
@@ -947,7 +947,7 @@ class Microphone:
                 message=(
                     "Nao encontrei um microfone padrao disponivel no Windows. Defina um dispositivo em "
                     "Configuracoes > Sistema > Som > Entrada e libere o microfone para aplicativos de desktop. "
-                    "Depois clique em Falar novamente."
+                    "Depois use Ctrl+Espaco ou duplo clique no campo de entrada para falar novamente."
                 ),
             )
         try:
@@ -3749,7 +3749,7 @@ class TerapsApp:
         self.system_panel = self._create_console_tab("Sistema")
         self.memory_panel = self._create_console_tab("Memoria")
 
-        self._write_panel(self.chat, "Teraps: Sistema online. Fale ou digite naturalmente; use 'ajuda' se quiser ver comandos.\n\n")
+        self._write_panel(self.chat, "Teraps: Sistema online. Digite e pressione Enter, ou use Ctrl+Espaco para falar.\n\n")
         self._write_panel(self.terminal, "Terminal interno pronto. Nenhum prompt externo sera aberto pelo Teraps.\n\n")
         self.refresh_system_panel()
         self.refresh_memory_panel()
@@ -3758,9 +3758,14 @@ class TerapsApp:
         input_frame.pack(fill="x", padx=14, pady=(0, 14))
         self.entry = Entry(input_frame, bg="#02070a", fg="#dffeff", insertbackground="#42f5ff", relief="flat", font=("Segoe UI", 11))
         self.entry.pack(side=LEFT, fill="x", expand=True, ipady=10)
+        self.entry_placeholder = "Digite e pressione Enter. Ctrl+Espaco ou duplo clique para falar."
+        self._set_entry_placeholder()
+        self.entry.bind("<FocusIn>", self._entry_focus_in)
+        self.entry.bind("<FocusOut>", self._entry_focus_out)
         self.entry.bind("<Return>", lambda _event: self.submit())
-        Button(input_frame, text="Falar", command=self.listen, bg="#18343b", fg="#b7fbff", relief="flat", font=("Segoe UI", 10, "bold")).pack(side=RIGHT, padx=(8, 0), ipady=6)
-        Button(input_frame, text="Enviar", command=self.submit, bg="#0ea5b7", fg="#001316", relief="flat", font=("Segoe UI", 10, "bold")).pack(side=RIGHT, padx=(8, 0), ipady=6)
+        self.entry.bind("<Double-Button-1>", lambda _event: self.listen())
+        root.bind("<Control-space>", lambda _event: self.listen())
+        root.bind("<Control-Return>", lambda _event: self.submit())
 
     def _create_console_tab(self, title: str) -> Text:
         frame = Frame(self.console_tabs, bg="#061014")
@@ -3822,17 +3827,34 @@ class TerapsApp:
         panel.see("1.0")
         panel.configure(state="disabled")
 
+    def _set_entry_placeholder(self) -> None:
+        if not self.entry.get().strip():
+            self.entry.insert(0, self.entry_placeholder)
+            self.entry.configure(fg="#5fb9c6")
+
+    def _entry_focus_in(self, _event=None) -> None:
+        if self.entry.get() == self.entry_placeholder:
+            self.entry.delete(0, END)
+            self.entry.configure(fg="#dffeff")
+
+    def _entry_focus_out(self, _event=None) -> None:
+        self._set_entry_placeholder()
+
     def enqueue_auto_message(self, text: str) -> None:
         self.responses.put("[AUTO] " + text)
 
     def submit(self) -> None:
         text = self.entry.get().strip()
+        if text == getattr(self, "entry_placeholder", ""):
+            return
         if not text:
             return
         self.handle_user_text(text)
 
     def handle_user_text(self, text: str) -> None:
         self.entry.delete(0, END)
+        self.entry.configure(fg="#dffeff")
+        self._set_entry_placeholder()
         self.last_user_text = text
         self.append_chat("Voce", text)
         if self._is_terminal_command(text):

@@ -4,6 +4,8 @@ Teraps e um assistente pessoal de inteligencia artificial com interface de holog
 
 A voz do Teraps usa a saida padrao de audio do Windows. Se voce mudar a saida do sistema para fone, caixa, HDMI ou Bluetooth, a fala acompanha essa configuracao.
 
+A interface nao depende de botoes de comando: digite e pressione `Enter`; use `Ctrl+Espaco` ou duplo clique no campo de entrada para falar pelo microfone padrao do Windows.
+
 ## Como executar
 
 ```powershell
