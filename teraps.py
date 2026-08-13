@@ -2388,6 +2388,243 @@ class LifeWorkStudio:
         return priorities.get(sector, "deixar claro o que precisa ser feito, quando e com qual criterio de pronto.")
 
 
+class CareerStudio:
+    SOURCES_NOTE = (
+        "Baseado no tipo de tarefas descritas em taxonomias ocupacionais como O*NET, BLS/OOH, ESCO e perfis nacionais de carreira."
+    )
+    PROFESSIONS = {
+        "medico": {
+            "aliases": ["medico", "medica", "doutor", "clinico", "saude"],
+            "focus": "triagem administrativa, agenda, prontuario resumido e comunicacao com pacientes.",
+            "tasks": ["organizar agenda", "rascunhar orientacoes", "resumir historico", "preparar checklist de consulta", "registrar pendencias"],
+            "automation": ["modelos de orientacao", "lembretes de retorno", "resumos administrativos", "lista de exames/documentos"],
+        },
+        "enfermeiro": {
+            "aliases": ["enfermeiro", "enfermeira", "tecnico enfermagem"],
+            "focus": "rotina de cuidados, passagem de plantao, checklist e registro.",
+            "tasks": ["montar passagem de plantao", "checar materiais", "organizar sinais/observacoes", "gerar checklist de cuidado"],
+            "automation": ["modelo de relatorio", "lembretes de procedimento", "lista de materiais", "resumo de ocorrencias"],
+        },
+        "professor": {
+            "aliases": ["professor", "professora", "educador", "instrutor"],
+            "focus": "plano de aula, atividades, avaliacao, feedback e acompanhamento.",
+            "tasks": ["criar plano de aula", "gerar exercicios", "resumir conteudo", "montar rubrica", "preparar feedback"],
+            "automation": ["roteiro de aula", "quiz", "calendario de estudos", "adaptacao por nivel"],
+        },
+        "advogado": {
+            "aliases": ["advogado", "advogada", "juridico", "paralegal"],
+            "focus": "organizacao de prazos, documentos, evidencias e rascunhos. Nao substitui profissional habilitado.",
+            "tasks": ["resumir caso", "listar documentos", "criar checklist de prazos", "rascunhar comunicacao", "organizar evidencias"],
+            "automation": ["modelo de peticao/checklist", "linha do tempo", "controle de prazos", "resumo executivo"],
+        },
+        "contador": {
+            "aliases": ["contador", "contadora", "contabilidade", "fiscal"],
+            "focus": "documentos fiscais, vencimentos, conciliacao, cobranca e organizacao.",
+            "tasks": ["listar documentos pendentes", "controlar vencimentos", "rascunhar cobranca", "resumir notas", "criar checklist fiscal"],
+            "automation": ["lembretes de impostos", "modelo de e-mail", "checklist mensal", "relatorio de pendencias"],
+        },
+        "vendedor": {
+            "aliases": ["vendedor", "vendedora", "comercial", "sales", "loja"],
+            "focus": "prospeccao, follow-up, proposta, objeções e relacionamento.",
+            "tasks": ["criar roteiro de abordagem", "responder objeções", "montar proposta", "agendar follow-up", "registrar leads"],
+            "automation": ["mensagens prontas", "sequencia de follow-up", "resumo de cliente", "script de venda"],
+        },
+        "atendente": {
+            "aliases": ["atendente", "suporte", "sac", "recepcao", "call center"],
+            "focus": "resposta rapida, historico, classificacao de problema e satisfacao.",
+            "tasks": ["classificar chamado", "responder cliente", "resumir problema", "criar proximo passo", "registrar solucao"],
+            "automation": ["base de respostas", "resumo de atendimento", "checklist de encerramento", "alerta de SLA"],
+        },
+        "programador": {
+            "aliases": ["programador", "desenvolvedor", "dev", "engenheiro software"],
+            "focus": "planejamento, codigo, debug, testes, documentacao e deploy.",
+            "tasks": ["planejar feature", "revisar codigo", "explicar erro", "criar checklist deploy", "documentar arquitetura"],
+            "automation": ["code review", "gerador de testes", "resumo de PR", "diagnostico de ambiente"],
+        },
+        "designer": {
+            "aliases": ["designer", "ux", "ui", "produto digital", "figma"],
+            "focus": "briefing, wireframe, sistema visual, revisao de UX e entrega.",
+            "tasks": ["criar briefing", "avaliar UX", "definir componentes", "gerar checklist visual", "organizar feedback"],
+            "automation": ["design brief", "heuristicas", "tokens visuais", "checklist de entrega"],
+        },
+        "criador": {
+            "aliases": ["criador", "youtube", "social media", "influencer", "conteudo"],
+            "focus": "ideias, roteiro, calendario editorial, thumbnail, publicacao e metricas.",
+            "tasks": ["gerar pauta", "criar roteiro", "montar calendario", "sugerir titulo", "planejar thumbnail"],
+            "automation": ["pacote YouTube", "tags", "descricao", "checklist de gravacao"],
+        },
+        "marketing": {
+            "aliases": ["marketing", "trafego", "publicidade", "copywriter"],
+            "focus": "campanhas, copy, persona, funil, relatorio e testes.",
+            "tasks": ["criar copy", "definir persona", "planejar campanha", "resumir metricas", "gerar ideias A/B"],
+            "automation": ["briefing de campanha", "calendario", "relatorio", "banco de copies"],
+        },
+        "rh": {
+            "aliases": ["rh", "recursos humanos", "recrutador", "dp"],
+            "focus": "triagem, entrevista, onboarding, comunicados e documentos.",
+            "tasks": ["criar roteiro entrevista", "resumir candidato", "montar onboarding", "rascunhar comunicado"],
+            "automation": ["checklist admissional", "modelo de feedback", "agenda de entrevista", "resumo de vaga"],
+        },
+        "administrativo": {
+            "aliases": ["administrativo", "secretaria", "assistente administrativo", "escritorio"],
+            "focus": "agenda, documentos, e-mails, arquivos, processos e follow-up.",
+            "tasks": ["organizar agenda", "responder e-mail", "criar ata", "listar pendencias", "arquivar documentos"],
+            "automation": ["resumo diario", "modelos de e-mail", "checklist de reuniao", "controle de pendencias"],
+        },
+        "financeiro": {
+            "aliases": ["financeiro", "analista financeiro", "tesouraria", "cobranca"],
+            "focus": "contas, fluxo de caixa, cobranca, comprovantes e previsao.",
+            "tasks": ["listar vencimentos", "rascunhar cobranca", "resumir gastos", "criar checklist de pagamento"],
+            "automation": ["lembretes financeiros", "relatorio de pendencias", "modelo de cobranca", "controle mensal"],
+        },
+        "engenheiro": {
+            "aliases": ["engenheiro", "engenheira", "engenharia", "civil", "mecanico", "eletrico"],
+            "focus": "requisitos, calculos de apoio, cronograma, riscos, documentacao e inspeção.",
+            "tasks": ["montar checklist tecnico", "resumir requisito", "registrar risco", "preparar relatorio", "organizar cronograma"],
+            "automation": ["diario de obra/projeto", "lista de materiais", "checklist de qualidade", "relatorio tecnico"],
+        },
+        "arquiteto": {
+            "aliases": ["arquiteto", "arquiteta", "arquitetura", "interiores"],
+            "focus": "briefing, programa de necessidades, materiais, cronograma e apresentacao.",
+            "tasks": ["criar briefing", "listar ambientes", "organizar referencias", "montar memorial", "planejar entrega"],
+            "automation": ["checklist de projeto", "memorial descritivo", "cronograma", "lista de pendencias"],
+        },
+        "corretor": {
+            "aliases": ["corretor", "corretora", "imoveis", "imobiliario"],
+            "focus": "leads, visitas, anuncios, comparativos, documentos e follow-up.",
+            "tasks": ["criar anuncio", "qualificar lead", "agendar visita", "responder objeção", "listar documentos"],
+            "automation": ["descrição de imóvel", "roteiro de visita", "follow-up", "checklist documental"],
+        },
+        "logistica": {
+            "aliases": ["logistica", "estoque", "transportes", "almoxarifado"],
+            "focus": "estoque, rotas, entregas, fila de trabalho, perdas e indicadores.",
+            "tasks": ["organizar entregas", "criar checklist de estoque", "registrar ocorrência", "priorizar fila"],
+            "automation": ["relatorio de entrega", "checklist de separacao", "alerta de pendencia", "resumo de rota"],
+        },
+        "cozinheiro": {
+            "aliases": ["cozinheiro", "cozinheira", "chef", "restaurante", "confeiteiro"],
+            "focus": "ficha técnica, mise en place, estoque, pedidos, higiene e padrao.",
+            "tasks": ["montar ficha técnica", "planejar preparo", "listar compras", "checklist de higiene", "organizar pedidos"],
+            "automation": ["lista de ingredientes", "cronograma de cozinha", "controle de estoque", "checklist de abertura"],
+        },
+        "tecnico": {
+            "aliases": ["tecnico", "técnico", "manutencao", "instalador", "reparo"],
+            "focus": "diagnostico, ordem de servico, materiais, execucao e garantia.",
+            "tasks": ["criar ordem de servico", "listar ferramentas", "diagnosticar sintomas", "registrar antes/depois"],
+            "automation": ["checklist tecnico", "modelo de orçamento", "relatorio de visita", "historico do cliente"],
+        },
+        "motorista": {
+            "aliases": ["motorista", "entregador", "delivery", "uber", "transportador"],
+            "focus": "rotas, segurança, manutenção, comprovantes, horários e atendimento.",
+            "tasks": ["planejar rota", "registrar entrega", "checar veículo", "organizar comprovantes", "responder cliente"],
+            "automation": ["checklist veicular", "resumo de viagem", "controle de gastos", "mensagens prontas"],
+        },
+        "agricultor": {
+            "aliases": ["agricultor", "fazenda", "agronomo", "pecuarista", "campo"],
+            "focus": "clima, insumos, manejo, manutenção, produção e registros.",
+            "tasks": ["registrar atividade", "listar insumos", "planejar manejo", "criar checklist de manutenção"],
+            "automation": ["diario de campo", "agenda de manejo", "controle de insumos", "relatorio de safra"],
+        },
+        "seguranca": {
+            "aliases": ["seguranca", "vigilante", "porteiro", "portaria"],
+            "focus": "rondas, ocorrências, controle de acesso, comunicação e risco.",
+            "tasks": ["registrar ocorrência", "criar checklist de ronda", "resumir turno", "controlar visitantes"],
+            "automation": ["livro de ocorrências", "checklist de posto", "relatorio de turno", "alerta de risco"],
+        },
+    }
+
+    def __init__(self, config: Config, memory: Memory) -> None:
+        self.config = config
+        self.memory = memory
+
+    def help(self) -> str:
+        names = ", ".join(sorted(self.PROFESSIONS.keys())[:18])
+        return (
+            "Career Studio Teraps:\n"
+            "- profissoes: lista areas que ja tenho mapeadas\n"
+            "- ajuda profissao NOME: mostra como posso ajudar aquela profissao\n"
+            "- funcoes profissao NOME: lista tarefas que posso executar/apoiar\n"
+            "- automacoes profissao NOME: sugere automacoes praticas\n"
+            "- dia profissao NOME: monta uma rotina diaria\n"
+            "- entregavel profissao NOME: cria modelos de entregas uteis\n"
+            f"Exemplos mapeados: {names}.\n"
+            f"{self.SOURCES_NOTE}"
+        )
+
+    def list_professions(self) -> str:
+        groups = [
+            "Saude: medico, enfermeiro",
+            "Educacao: professor",
+            "Negocios: vendedor, marketing, administrativo, rh, financeiro, contador",
+            "Tecnologia/criacao: programador, designer, criador",
+            "Servicos/operacao: tecnico, motorista, logistica, cozinheiro, seguranca",
+            "Projetos: engenheiro, arquiteto, corretor, agricultor, advogado",
+        ]
+        return "Profissoes que o Teraps ja consegue apoiar:\n" + "\n".join(f"- {line}" for line in groups)
+
+    def profile(self, name: str) -> str:
+        key, data = self._find(name)
+        self.memory.remember("profissao", "ultima_profissao", key)
+        return (
+            f"Como o Teraps ajuda em {key}:\n"
+            f"Foco: {data['focus']}\n\n"
+            "Funcoes praticas:\n" + "\n".join(f"- {task}" for task in data["tasks"]) + "\n\n"
+            "Automacoes recomendadas:\n" + "\n".join(f"- {item}" for item in data["automation"]) + "\n\n"
+            "Comandos uteis:\n"
+            f"- dia profissao {key}\n"
+            f"- funcoes profissao {key}\n"
+            f"- entregavel profissao {key}"
+        )
+
+    def functions(self, name: str) -> str:
+        key, data = self._find(name)
+        return (
+            f"Funcoes que o Teraps pode fazer para {key}:\n"
+            + "\n".join(f"- {task}: criar roteiro, checklist, texto, resumo ou lembrete relacionado." for task in data["tasks"])
+        )
+
+    def automations(self, name: str) -> str:
+        key, data = self._find(name)
+        return (
+            f"Automacoes recomendadas para {key}:\n"
+            + "\n".join(f"- {item}" for item in data["automation"])
+            + "\n- registrar aprendizados e preferencias no banco local\n"
+            "- usar lembretes, area de transferencia, captura de tela e diagnosticos Windows quando ajudar o fluxo."
+        )
+
+    def daily_plan(self, name: str) -> str:
+        key, data = self._find(name)
+        return (
+            f"Rotina diaria assistida para {key}:\n"
+            "- Inicio: revisar agenda, mensagens, pendencias e prioridade principal\n"
+            f"- Preparacao: {data['tasks'][0]}\n"
+            f"- Execucao: {data['tasks'][1] if len(data['tasks']) > 1 else data['tasks'][0]}\n"
+            "- Meio do dia: atualizar status, registrar problemas e responder contatos importantes\n"
+            f"- Qualidade: {data['tasks'][-1]}\n"
+            "- Fechamento: gerar resumo, pendencias, proximos passos e lembretes para amanha"
+        )
+
+    def deliverable(self, name: str) -> str:
+        key, data = self._find(name)
+        return (
+            f"Modelo de entregavel para {key}:\n"
+            "Titulo: [atividade/cliente/projeto]\n"
+            "Objetivo: [resultado esperado]\n"
+            "Dados usados: [arquivos, conversa, fotos, agenda, historico]\n"
+            "Execucao:\n"
+            + "\n".join(f"- {task}" for task in data["tasks"][:4])
+            + "\nRevisao: criterios de qualidade, riscos e pontos pendentes\n"
+            "Proximo passo: responsavel, prazo e lembrete no Teraps"
+        )
+
+    def _find(self, name: str) -> tuple[str, dict]:
+        low = LifeWorkStudio._normalize(name or "")
+        for key, data in self.PROFESSIONS.items():
+            if key in low or any(alias in low for alias in data["aliases"]):
+                return key, data
+        return "administrativo", self.PROFESSIONS["administrativo"]
+
+
 class HologramBridge:
     def __init__(self, config: Config) -> None:
         self.config = config
@@ -2666,6 +2903,7 @@ class TerapsBrain:
         self.youtube = YouTubeCreatorManager(config, memory)
         self.tech = TechStudio(config, memory)
         self.life_work = LifeWorkStudio(config, memory)
+        self.careers = CareerStudio(config, memory)
         self.bridge = HologramBridge(config)
 
     def respond(self, text: str) -> str:
@@ -2844,6 +3082,23 @@ class TerapsBrain:
             return self.tech.design_brief(product)
         if low in {"ajuda trabalho", "ajuda emprego", "ajuda servicos", "ajuda serviços", "life work", "life studio"}:
             return self.life_work.help()
+        if low in {"profissoes", "profissões", "lista profissoes", "lista profissões", "career studio", "ajuda profissao", "ajuda profissão"}:
+            return self.careers.help() + "\n\n" + self.careers.list_professions()
+        if low.startswith(("ajuda profissao ", "ajuda profissão ", "profissao ", "profissão ")):
+            name = re.sub(r"^(ajuda profissao|ajuda profissão|profissao|profissão)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.profile(name)
+        if low.startswith(("funcoes profissao ", "funções profissão ", "funcoes para ", "funções para ")):
+            name = re.sub(r"^(funcoes profissao|funções profissão|funcoes para|funções para)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.functions(name)
+        if low.startswith(("automacoes profissao ", "automações profissão ", "automacoes para ", "automações para ")):
+            name = re.sub(r"^(automacoes profissao|automações profissão|automacoes para|automações para)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.automations(name)
+        if low.startswith(("dia profissao ", "dia profissão ", "rotina profissao ", "rotina profissão ")):
+            name = re.sub(r"^(dia profissao|dia profissão|rotina profissao|rotina profissão)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.daily_plan(name)
+        if low.startswith(("entregavel profissao ", "entregável profissão ", "modelo profissao ", "modelo profissão ")):
+            name = re.sub(r"^(entregavel profissao|entregável profissão|modelo profissao|modelo profissão)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.deliverable(name)
         if low.startswith(("plano trabalho ", "planejar trabalho ", "plano emprego ", "plano servico ", "plano serviço ")):
             area = clean.split(" ", 2)[-1]
             return self.life_work.plan(area)
@@ -3075,6 +3330,23 @@ class TerapsBrain:
             return self.tech.design_brief(clean.split(" ", 2)[-1])
         if key in {"ajuda trabalho", "ajuda emprego", "ajuda servicos", "life work", "life studio"}:
             return self.life_work.help()
+        if key in {"profissoes", "lista profissoes", "career studio", "ajuda profissao"}:
+            return self.careers.help() + "\n\n" + self.careers.list_professions()
+        if key.startswith(("ajuda profissao ", "profissao ")):
+            name = re.sub(r"^(ajuda profissao|profissao)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.profile(name)
+        if key.startswith(("funcoes profissao ", "funcoes para ")):
+            name = re.sub(r"^(funcoes profissao|funcoes para)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.functions(name)
+        if key.startswith(("automacoes profissao ", "automacoes para ")):
+            name = re.sub(r"^(automacoes profissao|automacoes para)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.automations(name)
+        if key.startswith(("dia profissao ", "rotina profissao ")):
+            name = re.sub(r"^(dia profissao|rotina profissao)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.daily_plan(name)
+        if key.startswith(("entregavel profissao ", "modelo profissao ")):
+            name = re.sub(r"^(entregavel profissao|modelo profissao)\s+", "", clean, flags=re.IGNORECASE)
+            return self.careers.deliverable(name)
         if key.startswith(("plano trabalho ", "planejar trabalho ", "plano emprego ", "plano servico ")):
             return self.life_work.plan(clean.split(" ", 2)[-1])
         if key.startswith(("produtividade ", "melhorar produtividade ", "otimizar trabalho ", "melhorar tempo ")):
@@ -3211,6 +3483,8 @@ class TerapsBrain:
             "- verificar atualizacao / configurar fonte update URL / adaptar hardware\n\n"
             "Trabalho, tecnologia e criacao:\n"
             "- ajuda trabalho / plano trabalho AREA / produtividade PROFISSAO\n"
+            "- profissoes / ajuda profissao NOME / funcoes profissao NOME\n"
+            "- automacoes profissao NOME / dia profissao NOME / entregavel profissao NOME\n"
             "- ajuda programador / plano app IDEIA / revisar codigo ARQUIVO\n"
             "- configurar canal youtube ... / criar video youtube TEMA / calendario youtube\n\n"
             "Projeto e GitHub:\n"
@@ -3573,6 +3847,9 @@ class TerapsBrain:
             "- iniciar unreal / status unreal\n"
             "- configurar unreal \"C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Binaries\\Win64\\UnrealEditor.exe\"\n"
             "- ajuda trabalho / ajuda servicos\n"
+            "- profissoes / ajuda profissao professor\n"
+            "- funcoes profissao vendedor / automacoes profissao medico\n"
+            "- dia profissao programador / entregavel profissao designer\n"
             "- plano trabalho minha area\n"
             "- produtividade minha profissao\n"
             "- rotina profissional minha area\n"

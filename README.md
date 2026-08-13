@@ -86,6 +86,12 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `data`
 - `sugestoes`
 - `ajuda trabalho`
+- `profissoes`
+- `ajuda profissao professor`
+- `funcoes profissao vendedor`
+- `automacoes profissao medico`
+- `dia profissao programador`
+- `entregavel profissao designer`
 - `plano trabalho minha profissao`
 - `produtividade minha area`
 - `rotina profissional minha area`
@@ -155,6 +161,7 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - Utilitarios Windows: area de transferencia, captura de tela, camera, gravador, diagnostico de processos e exportacao de memoria rodam pelo proprio Teraps.
 - Tech Studio: ajuda programadores, desenvolvedores e designers com planejamento de apps, arquitetura, stack, revisao rapida de codigo, explicacao de arquivos, checklist de deploy, design system, UX review e briefing de design.
 - Life & Work Studio: ajuda em areas amplas de emprego, servicos e vida pessoal com planos de produtividade, rotinas, checklists, melhorias de tempo, atendimento, vendas, administracao, saude, educacao, financeiro, juridico, logistica, criacao, operacoes, seguranca e servicos locais.
+- Career Studio: mapeia profissoes e tarefas do dia a dia com base em taxonomias ocupacionais como O*NET, BLS/OOH, ESCO e perfis nacionais de carreira; gera funcoes, automacoes, rotina diaria e modelos de entregaveis por profissao.
 - Criador YouTube: configura conta/canal, salva perfil do canal no SQLite, gera ideias, titulos, descricoes, tags, roteiros, checklist e calendario editorial.
 - Administracao YouTube preparada: guarda caminho de credenciais OAuth/API e deixa o sistema pronto para YouTube Data API oficial. Upload/alteracao real do canal exige autorizacao da conta Google.
 - Automacao proativa: verifica periodicamente lembretes, perfil aprendido, manutencao, atualizacoes e sugestoes de rotina.
