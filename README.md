@@ -60,6 +60,13 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `hora`
 - `data`
 - `sugestoes`
+- `ajuda trabalho`
+- `plano trabalho minha profissao`
+- `produtividade minha area`
+- `rotina profissional minha area`
+- `checklist servico minha area`
+- `melhorar vida`
+- `diagnostico produtividade`
 - `voz teraps`
 - `voz neural`
 - `voz windows`
@@ -118,6 +125,7 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - Executor interno oculto: comandos de diagnostico rodam como filhos invisiveis do `.exe`; a saida aparece no chat, sem abrir terminal externo.
 - Entrada por voz: usa o microfone padrao definido no Windows, reconhece a fala e executa o comando como texto normal. Se nao entender, pede para o usuario explicar de outro jeito.
 - Tech Studio: ajuda programadores, desenvolvedores e designers com planejamento de apps, arquitetura, stack, revisao rapida de codigo, explicacao de arquivos, checklist de deploy, design system, UX review e briefing de design.
+- Life & Work Studio: ajuda em areas amplas de emprego, servicos e vida pessoal com planos de produtividade, rotinas, checklists, melhorias de tempo, atendimento, vendas, administracao, saude, educacao, financeiro, juridico, logistica, criacao, operacoes, seguranca e servicos locais.
 - Criador YouTube: configura conta/canal, salva perfil do canal no SQLite, gera ideias, titulos, descricoes, tags, roteiros, checklist e calendario editorial.
 - Administracao YouTube preparada: guarda caminho de credenciais OAuth/API e deixa o sistema pronto para YouTube Data API oficial. Upload/alteracao real do canal exige autorizacao da conta Google.
 - Automacao proativa: verifica periodicamente lembretes, perfil aprendido, manutencao, atualizacoes e sugestoes de rotina.

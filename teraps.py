@@ -450,6 +450,11 @@ class Memory:
             "sistema": ["sistema", "erro", "bug", "falha", "travou", "diagnostico"],
             "planejamento": ["planeje", "plano", "organize", "agenda", "tarefa"],
             "criacao": ["crie", "ideia", "projeto", "inventar", "escreva"],
+            "trabalho": ["trabalho", "emprego", "servico", "servico", "produtividade", "rotina", "cliente", "equipe", "profissao", "profissao"],
+            "negocios": ["vendas", "loja", "empresa", "cliente", "orcamento", "orcamento", "estoque", "financeiro", "marketing", "atendimento"],
+            "educacao": ["aula", "estudo", "professor", "aluno", "curso", "escola", "treinamento"],
+            "saude": ["saude", "clinica", "paciente", "consulta", "academia", "bem estar"],
+            "servicos": ["manutencao", "obra", "entrega", "logistica", "limpeza", "cozinha", "salao", "servicos"],
             "tecnologia": ["tecnologia", "programador", "desenvolvedor", "designer", "ux", "ui", "codigo", "código", "frontend", "backend", "api", "deploy"],
             "codigo": ["codigo", "código", "bug", "refatorar", "revisar codigo", "python", "javascript", "typescript", "html", "css"],
             "design": ["designer", "design", "ui", "ux", "interface", "layout", "prototipo", "protótipo", "figma", "paleta"],
@@ -480,6 +485,7 @@ class Memory:
             "interesse_automacao_total": ["automatico", "automático", "sem precisar", "sozinho", "tudo automatico"],
             "interesse_voz_humana": ["voz humana", "mulher real", "voz neural", "mais humana"],
             "interesse_tecnologia": ["programador", "desenvolvedor", "designer", "mundo da tecnologia", "codigo", "código", "ui", "ux"],
+            "interesse_produtividade_profissional": ["trabalho", "emprego", "servico", "produtividade", "melhorar tempo", "rotina", "vida do usuario"],
         }
         for key, tokens in signals.items():
             if any(token in low for token in tokens):
@@ -1954,6 +1960,183 @@ class TechStudio:
         return path if path.exists() and path.is_file() else None
 
 
+class LifeWorkStudio:
+    SECTORS = {
+        "administracao": ["administracao", "secretaria", "escritorio", "gestao", "rh", "recursos humanos"],
+        "vendas": ["vendas", "comercial", "loja", "ecommerce", "cliente", "prospeccao"],
+        "atendimento": ["atendimento", "suporte", "sac", "recepcao", "call center"],
+        "financeiro": ["financeiro", "contabilidade", "cobranca", "orcamento", "caixa", "nota fiscal"],
+        "juridico": ["juridico", "advocacia", "contrato", "processo", "documento legal"],
+        "saude": ["saude", "clinica", "hospital", "paciente", "consulta", "dentista", "psicologia"],
+        "educacao": ["educacao", "professor", "aluno", "aula", "curso", "treinamento", "escola"],
+        "tecnologia": ["programador", "desenvolvedor", "designer", "dados", "ti", "software", "ux", "ui"],
+        "criacao": ["criador", "marketing", "social media", "youtube", "conteudo", "design", "foto", "video"],
+        "operacoes": ["logistica", "entrega", "estoque", "transportes", "producao", "industria"],
+        "servicos": ["manutencao", "limpeza", "obra", "reparo", "instalacao", "salao", "cozinha"],
+        "campo": ["agricultura", "fazenda", "pecuaria", "campo", "plantio", "colheita"],
+        "seguranca": ["seguranca", "portaria", "monitoramento", "risco", "ocorrencia"],
+        "vida": ["vida", "casa", "saude pessoal", "familia", "estudo", "rotina pessoal"],
+    }
+
+    def __init__(self, config: Config, memory: Memory) -> None:
+        self.config = config
+        self.memory = memory
+
+    def help(self) -> str:
+        return (
+            "Life & Work Studio Teraps:\n"
+            "- ajuda trabalho: mostra como posso ajudar em empregos e servicos\n"
+            "- plano trabalho sua area: cria rotina, checklist e automacoes\n"
+            "- produtividade sua profissao: melhora tempo, foco e qualidade\n"
+            "- rotina profissional sua area: agenda diaria sugerida\n"
+            "- checklist servico sua area: checklist operacional\n"
+            "- melhorar vida: rotina pessoal, energia, organizacao e prioridades\n"
+            "- diagnostico produtividade: identifica gargalos pelo que aprendi sobre voce"
+        )
+
+    def plan(self, area: str) -> str:
+        area = area.strip() or "trabalho"
+        sector = self.detect_sector(area)
+        self.memory.remember("trabalho", "ultima_area", area)
+        return (
+            f"Plano de produtividade para {area} ({sector}):\n"
+            f"{self._sector_summary(sector)}\n\n"
+            "Rotina base:\n"
+            "- 1. Capturar tudo que precisa ser feito em uma lista unica\n"
+            "- 2. Separar tarefas por urgente, importante, espera e delegavel\n"
+            "- 3. Agrupar tarefas repetidas em blocos de horario\n"
+            "- 4. Criar modelos para mensagens, relatorios, orcamentos e checklists\n"
+            "- 5. Revisar no fim do dia: pendencias, erros, tempo gasto e proximo passo\n\n"
+            "Automacoes que o Teraps pode assumir ou preparar:\n"
+            "- lembretes, agenda local, resumo do dia e prioridades\n"
+            "- pesquisa, rascunhos, respostas, ideias, roteiros, checklists e documentacao\n"
+            "- abertura de apps, diagnostico do sistema, arquivos e workspace\n"
+            "- registro no banco local do que foi aprendido e do que precisa voltar depois\n\n"
+            "Indicadores simples:\n"
+            "- tempo por tarefa, atrasos, retrabalho, tarefas repetidas e qualidade percebida pelo cliente"
+        )
+
+    def productivity(self, area: str) -> str:
+        area = area.strip() or "sua rotina"
+        sector = self.detect_sector(area)
+        return (
+            f"Melhoria de tempo e produtividade para {area}:\n"
+            "- Corte tempo: transforme tarefas repetidas em modelos salvos\n"
+            "- Reduza erro: use checklist antes de entregar qualquer servico\n"
+            "- Ganhe foco: trabalhe em blocos de 25 a 50 minutos por tipo de tarefa\n"
+            "- Melhore resposta: tenha mensagens prontas para duvidas frequentes\n"
+            "- Organize provas: salve datas, decisoes e historico no banco/memoria\n"
+            "- Evolua semanalmente: revise o que tomou mais tempo e automatize primeiro\n"
+            f"- Prioridade para {sector}: {self._priority_for(sector)}"
+        )
+
+    def routine(self, area: str) -> str:
+        area = area.strip() or "trabalho"
+        sector = self.detect_sector(area)
+        return (
+            f"Rotina profissional sugerida para {area}:\n"
+            "- Inicio: revisar agenda, pendencias e mensagens criticas\n"
+            "- Primeiro bloco: tarefa mais importante antes de interrupcoes\n"
+            "- Meio do dia: atendimento, reunioes, entregas e atualizacao de status\n"
+            "- Segundo bloco: producao profunda, analise ou execucao tecnica\n"
+            "- Fechamento: registrar progresso, preparar amanha e limpar pendencias pequenas\n"
+            f"- Cuidado do setor: {self._priority_for(sector)}"
+        )
+
+    def checklist(self, area: str) -> str:
+        area = area.strip() or "servico"
+        sector = self.detect_sector(area)
+        return (
+            f"Checklist de servico para {area}:\n"
+            "- objetivo claro do servico\n"
+            "- dados, arquivos, ferramentas e acessos necessarios\n"
+            "- riscos e pontos que precisam de confirmacao humana\n"
+            "- prazo combinado e criterio de pronto\n"
+            "- execucao registrada passo a passo\n"
+            "- revisao final de qualidade\n"
+            "- entrega com resumo do que foi feito e proximas recomendacoes\n"
+            f"- item especifico: {self._priority_for(sector)}"
+        )
+
+    def life_improvement(self) -> str:
+        personal = self.memory.personal_context(6)
+        context = f"\nContexto aprendido: {personal}" if personal else ""
+        return (
+            "Plano para melhorar tempo, produtividade e vida do usuario:\n"
+            "- Definir 3 prioridades por dia: saude, trabalho e vida pessoal\n"
+            "- Criar lembretes para compromissos e tarefas que sempre escapam\n"
+            "- Separar horarios para foco, mensagens, descanso e organizacao\n"
+            "- Usar o Teraps para resumir, planejar, pesquisar e registrar decisoes\n"
+            "- Transformar tarefas repetidas em modelos e checklists\n"
+            "- Revisar semanalmente o que deu resultado e o que deve ser automatizado\n"
+            "- Proteger sono, pausas e alimentacao como parte da produtividade"
+            + context
+        )
+
+    def diagnostic(self) -> str:
+        topics = self.memory.top_topics(8)
+        profile = self.memory.learned_profile_summary()
+        suggestions = [
+            "- escolha uma area com: plano trabalho sua profissao",
+            "- crie uma rotina com: rotina profissional sua area",
+            "- reduza erro com: checklist servico sua area",
+            "- melhore sua semana com: melhorar vida",
+        ]
+        return (
+            "Diagnostico de produtividade:\n"
+            f"- Topicos recentes: {', '.join(topics) if topics else 'ainda sem padrao forte'}\n"
+            f"- Perfil aprendido: {profile}\n"
+            "Proximas acoes:\n" + "\n".join(suggestions)
+        )
+
+    def detect_sector(self, text: str) -> str:
+        low = self._normalize(text)
+        for sector, tokens in self.SECTORS.items():
+            if any(token in low for token in tokens):
+                return sector
+        return "geral"
+
+    @staticmethod
+    def _normalize(text: str) -> str:
+        normalized = unicodedata.normalize("NFKD", text.lower())
+        return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+    @staticmethod
+    def _sector_summary(sector: str) -> str:
+        summaries = {
+            "administracao": "Foco em agenda, documentos, comunicacao, prazos e organizacao de processos.",
+            "vendas": "Foco em funil, atendimento rapido, follow-up, propostas e relacionamento com clientes.",
+            "atendimento": "Foco em respostas claras, historico do cliente, SLA e reducao de retrabalho.",
+            "financeiro": "Foco em controle, vencimentos, conciliacao, cobranca, comprovantes e previsibilidade.",
+            "juridico": "Foco em prazos, documentos, revisao, modelos e organizacao de evidencias. Nao substitui advogado.",
+            "saude": "Foco em agenda, registro, orientacao administrativa e acompanhamento. Nao substitui profissional de saude.",
+            "educacao": "Foco em plano de aula, estudo, explicacoes, exercicios, revisao e acompanhamento.",
+            "tecnologia": "Foco em codigo, arquitetura, debug, documentacao, design, deploy e produtividade tecnica.",
+            "criacao": "Foco em ideias, roteiro, calendario editorial, design, publicacao e analise de conteudo.",
+            "operacoes": "Foco em fila de trabalho, estoque, entrega, padrao operacional e indicadores.",
+            "servicos": "Foco em checklist, orcamento, agenda, materiais, execucao e revisao de qualidade.",
+            "campo": "Foco em planejamento, clima, insumos, manutencao, producao e registro de atividades.",
+            "seguranca": "Foco em ocorrencias, checklist, rondas, registro e comunicacao de risco.",
+            "vida": "Foco em energia, saude, casa, familia, estudo, prioridades e descanso.",
+        }
+        return summaries.get(sector, "Foco em organizar tarefas, reduzir repeticao, melhorar comunicacao e medir resultados.")
+
+    @staticmethod
+    def _priority_for(sector: str) -> str:
+        priorities = {
+            "financeiro": "conferir valores, datas e comprovantes antes de qualquer envio.",
+            "juridico": "separar informacao de apoio e validar decisoes com profissional habilitado.",
+            "saude": "usar como apoio administrativo e procurar profissional em questoes clinicas.",
+            "vendas": "nunca deixar follow-up sem data definida.",
+            "atendimento": "registrar problema, solucao e proximo contato.",
+            "educacao": "transformar conteudo em pratica e revisao espacada.",
+            "tecnologia": "testar antes de entregar e documentar decisoes tecnicas.",
+            "servicos": "confirmar material, local, prazo e criterio de qualidade.",
+            "vida": "preservar descanso e rotina sustentavel.",
+        }
+        return priorities.get(sector, "deixar claro o que precisa ser feito, quando e com qual criterio de pronto.")
+
+
 class HologramBridge:
     def __init__(self, config: Config) -> None:
         self.config = config
@@ -2225,6 +2408,7 @@ class TerapsBrain:
         self.routines = RoutineManager(config, memory, self.home, self.workspace)
         self.youtube = YouTubeCreatorManager(config, memory)
         self.tech = TechStudio(config, memory)
+        self.life_work = LifeWorkStudio(config, memory)
         self.bridge = HologramBridge(config)
 
     def respond(self, text: str) -> str:
@@ -2345,6 +2529,24 @@ class TerapsBrain:
         if low.startswith(("briefing design ", "briefing ui ", "briefing ux ")):
             product = clean.split(" ", 2)[-1]
             return self.tech.design_brief(product)
+        if low in {"ajuda trabalho", "ajuda emprego", "ajuda servicos", "ajuda serviços", "life work", "life studio"}:
+            return self.life_work.help()
+        if low.startswith(("plano trabalho ", "planejar trabalho ", "plano emprego ", "plano servico ", "plano serviço ")):
+            area = clean.split(" ", 2)[-1]
+            return self.life_work.plan(area)
+        if low.startswith(("produtividade ", "melhorar produtividade ", "otimizar trabalho ", "melhorar tempo ")):
+            area = clean.split(" ", 1)[-1]
+            return self.life_work.productivity(area)
+        if low.startswith(("rotina profissional ", "rotina trabalho ", "rotina servico ", "rotina serviço ")):
+            area = clean.split(" ", 2)[-1]
+            return self.life_work.routine(area)
+        if low.startswith(("checklist servico ", "checklist serviço ", "checklist trabalho ")):
+            area = clean.split(" ", 2)[-1]
+            return self.life_work.checklist(area)
+        if low in {"melhorar vida", "melhore minha vida", "organizar vida", "vida produtiva"}:
+            return self.life_work.life_improvement()
+        if low in {"diagnostico produtividade", "diagnóstico produtividade", "produtividade status"}:
+            return self.life_work.diagnostic()
         if low in {"start day", "iniciar dia", "rotina matinal", "bom dia teraps"}:
             self.bridge.send_state("speaking", "smiling")
             return self.routines.start_day()
@@ -2539,6 +2741,20 @@ class TerapsBrain:
             return self.tech.ux_review(clean.split(" ", 2)[-1])
         if key.startswith(("briefing design ", "briefing ui ", "briefing ux ")):
             return self.tech.design_brief(clean.split(" ", 2)[-1])
+        if key in {"ajuda trabalho", "ajuda emprego", "ajuda servicos", "life work", "life studio"}:
+            return self.life_work.help()
+        if key.startswith(("plano trabalho ", "planejar trabalho ", "plano emprego ", "plano servico ")):
+            return self.life_work.plan(clean.split(" ", 2)[-1])
+        if key.startswith(("produtividade ", "melhorar produtividade ", "otimizar trabalho ", "melhorar tempo ")):
+            return self.life_work.productivity(clean.split(" ", 1)[-1])
+        if key.startswith(("rotina profissional ", "rotina trabalho ", "rotina servico ")):
+            return self.life_work.routine(clean.split(" ", 2)[-1])
+        if key.startswith(("checklist servico ", "checklist trabalho ")):
+            return self.life_work.checklist(clean.split(" ", 2)[-1])
+        if key in {"melhorar vida", "melhore minha vida", "organizar vida", "vida produtiva"}:
+            return self.life_work.life_improvement()
+        if key in {"diagnostico produtividade", "produtividade status"}:
+            return self.life_work.diagnostic()
         if key in {"sensores", "seguranca", "status da casa", "ambiente"}:
             return self.home.security_status()
         if key in {"ponte 3d", "ponte holografica"}:
@@ -2644,6 +2860,11 @@ class TerapsBrain:
             "tecnologia": ("Tech Studio", "ajuda programador"),
             "codigo": ("Revisar codigo", "revisar codigo teraps.py"),
             "design": ("Design/UX", "design system Teraps"),
+            "trabalho": ("Trabalho", "ajuda trabalho"),
+            "negocios": ("Negocios", "plano trabalho vendas"),
+            "educacao": ("Educacao", "plano trabalho professor"),
+            "saude": ("Saude", "plano trabalho clinica"),
+            "servicos": ("Servicos", "checklist servico atendimento ao cliente"),
             "memoria": ("Memoria", "o que voce lembra"),
             "foco": ("Modo foco", "modo foco"),
             "casa": ("Ambiente", "sensores"),
@@ -2659,6 +2880,7 @@ class TerapsBrain:
             ("Sistema", "sistema"),
             ("Memoria", "o que voce lembra"),
             ("Tech", "ajuda programador"),
+            ("Trabalho", "ajuda trabalho"),
             ("YouTube", "canal youtube"),
         ]
         for item in defaults:
@@ -2824,6 +3046,12 @@ class TerapsBrain:
             "- avatar 3d / status avatar\n"
             "- iniciar unreal / status unreal\n"
             "- configurar unreal \"C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Binaries\\Win64\\UnrealEditor.exe\"\n"
+            "- ajuda trabalho / ajuda servicos\n"
+            "- plano trabalho minha area\n"
+            "- produtividade minha profissao\n"
+            "- rotina profissional minha area\n"
+            "- checklist servico minha area\n"
+            "- melhorar vida / diagnostico produtividade\n"
             "- status git / pipelines\n"
             "- ajuda programador / ajuda designer\n"
             "- plano app minha ideia\n"
