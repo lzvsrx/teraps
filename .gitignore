@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+teraps_data/
+build/
+dist/*
+!dist/Teraps.exe
+!Teraps.spec
+!assets/
+!assets/teraps.ico
+!assets/teraps.png
+!assets/teraps_avatar.png
+!assets/teraps_icon_avatar.png
