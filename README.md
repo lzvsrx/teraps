@@ -74,6 +74,17 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - `modo foco`
 - `status git`
 - `pipelines`
+- `ajuda programador`
+- `ajuda designer`
+- `plano app minha ideia`
+- `arquitetura projeto minha ideia`
+- `stack projeto minha ideia`
+- `revisar codigo teraps.py`
+- `explicar codigo teraps.py`
+- `checklist deploy`
+- `design system Teraps`
+- `ux review tela principal`
+- `briefing design Teraps`
 - `start day`
 - `wind down`
 - `resumo executivo`
@@ -102,6 +113,7 @@ powershell -ExecutionPolicy Bypass -File .\criar_executavel.ps1
 - Lembretes e tarefas locais: grava lembretes no SQLite e avisa dentro da propria conversa quando vencem.
 - Executor interno oculto: comandos de diagnostico rodam como filhos invisiveis do `.exe`; a saida aparece no chat, sem abrir terminal externo.
 - Entrada por voz: usa o microfone padrao definido no Windows, reconhece a fala e executa o comando como texto normal. Se nao entender, pede para o usuario explicar de outro jeito.
+- Tech Studio: ajuda programadores, desenvolvedores e designers com planejamento de apps, arquitetura, stack, revisao rapida de codigo, explicacao de arquivos, checklist de deploy, design system, UX review e briefing de design.
 - Criador YouTube: configura conta/canal, salva perfil do canal no SQLite, gera ideias, titulos, descricoes, tags, roteiros, checklist e calendario editorial.
 - Administracao YouTube preparada: guarda caminho de credenciais OAuth/API e deixa o sistema pronto para YouTube Data API oficial. Upload/alteracao real do canal exige autorizacao da conta Google.
 - Automacao proativa: verifica periodicamente lembretes, perfil aprendido, manutencao, atualizacoes e sugestoes de rotina.

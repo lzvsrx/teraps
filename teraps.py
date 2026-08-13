@@ -447,6 +447,9 @@ class Memory:
             "sistema": ["sistema", "erro", "bug", "falha", "travou", "diagnostico"],
             "planejamento": ["planeje", "plano", "organize", "agenda", "tarefa"],
             "criacao": ["crie", "ideia", "projeto", "inventar", "escreva"],
+            "tecnologia": ["tecnologia", "programador", "desenvolvedor", "designer", "ux", "ui", "codigo", "código", "frontend", "backend", "api", "deploy"],
+            "codigo": ["codigo", "código", "bug", "refatorar", "revisar codigo", "python", "javascript", "typescript", "html", "css"],
+            "design": ["designer", "design", "ui", "ux", "interface", "layout", "prototipo", "protótipo", "figma", "paleta"],
             "youtube": ["youtube", "canal", "video", "vídeo", "criador de conteudo", "criador de conteúdo", "thumbnail", "roteiro"],
             "memoria": ["lembre", "memorize", "aprenda", "prefiro", "gosto"],
             "foco": ["modo foco", "deep work", "workspace", "git", "pipeline"],
@@ -473,6 +476,7 @@ class Memory:
             "interesse_avatar_realista": ["avatar", "holograma", "renderizada", "real", "humanizada"],
             "interesse_automacao_total": ["automatico", "automático", "sem precisar", "sozinho", "tudo automatico"],
             "interesse_voz_humana": ["voz humana", "mulher real", "voz neural", "mais humana"],
+            "interesse_tecnologia": ["programador", "desenvolvedor", "designer", "mundo da tecnologia", "codigo", "código", "ui", "ux"],
         }
         for key, tokens in signals.items():
             if any(token in low for token in tokens):
@@ -1755,6 +1759,198 @@ class YouTubeCreatorManager:
         )
 
 
+class TechStudio:
+    def __init__(self, config: Config, memory: Memory) -> None:
+        self.config = config
+        self.memory = memory
+
+    def help(self) -> str:
+        return (
+            "Tech Studio Teraps:\n"
+            "- ajuda programador: comandos para desenvolvimento\n"
+            "- plano app sua ideia: backlog, arquitetura e MVP\n"
+            "- arquitetura projeto sua ideia: camadas, dados, riscos e proximos passos\n"
+            "- stack projeto sua ideia: tecnologias sugeridas por perfil de hardware e objetivo\n"
+            "- revisar codigo caminho\\arquivo.py: analise rapida de riscos e melhorias\n"
+            "- explicar codigo caminho\\arquivo.py: resumo do arquivo\n"
+            "- checklist deploy: revisao antes de publicar\n"
+            "- design system produto: base visual para UI\n"
+            "- ux review descricao da tela: melhorias de usabilidade\n"
+            "- briefing design produto: roteiro para designer ou Figma"
+        )
+
+    def plan_app(self, idea: str) -> str:
+        idea = idea.strip() or "produto digital"
+        self.memory.remember("tecnologia", "ultimo_plano_app", idea)
+        return (
+            f"Plano tecnico para: {idea}\n"
+            "MVP:\n"
+            "- definir usuario principal, problema e resultado esperado\n"
+            "- criar fluxo central com cadastro/configuracao, acao principal e historico\n"
+            "- salvar dados essenciais em SQLite/local primeiro, evoluindo para API quando precisar multiusuario\n"
+            "- incluir logs, tratamento de erro, tela vazia, loading e backup/exportacao\n\n"
+            "Arquitetura sugerida:\n"
+            "- UI: camada de interface simples e responsiva\n"
+            "- Core: regras do produto sem depender da tela\n"
+            "- Dados: repositorios para banco, arquivos e integracoes\n"
+            "- Automacao: tarefas em background com fila e logs\n"
+            "- Observabilidade: historico de eventos, erros e versao\n\n"
+            "Backlog inicial:\n"
+            "1. Prototipo navegavel\n"
+            "2. Persistencia local\n"
+            "3. Comandos/atalhos principais\n"
+            "4. Testes dos fluxos criticos\n"
+            "5. Empacotamento e atualizacao"
+        )
+
+    def architecture(self, idea: str) -> str:
+        idea = idea.strip() or "sistema"
+        return (
+            f"Arquitetura proposta para {idea}:\n"
+            "- Entrada: texto, voz, arquivos ou integracoes externas\n"
+            "- Orquestrador: interpreta intencao, valida permissoes e decide a ferramenta\n"
+            "- Servicos: modulos pequenos para app, internet, banco, automacao, midia e sistema\n"
+            "- Persistencia: SQLite para prototipo; Postgres/Supabase/Neon quando houver multiusuario\n"
+            "- Seguranca: logs sem segredos, confirmacao para acoes destrutivas e tokens fora do codigo\n"
+            "- Escala: separar tarefas demoradas em fila/background worker\n"
+            "- Qualidade: testes unitarios no core e smoke tests no executavel"
+        )
+
+    def stack(self, idea: str) -> str:
+        idea = idea.strip() or "aplicacao"
+        profile = self.config["adaptive_last_profile"] or {}
+        hardware = profile.get("name", "auto")
+        return (
+            f"Stack sugerida para {idea} considerando perfil {hardware}:\n"
+            "- App desktop leve: Python + Tkinter/CustomTkinter + SQLite + PyInstaller\n"
+            "- App web moderno: React/Vite + TypeScript + SQLite local ou Supabase\n"
+            "- Backend/API: FastAPI + Pydantic + SQLAlchemy\n"
+            "- Automacao Windows: subprocess controlado, PowerShell seguro e logs\n"
+            "- Design/UI: tokens de cor, spacing de 4/8px, componentes reutilizaveis e estados vazios\n"
+            "- IA futura: camada de provedor isolada para trocar modelo sem reescrever o app\n"
+            "- Deploy: GitHub Actions para build/teste e release versionada"
+        )
+
+    def review_code(self, target: str) -> str:
+        path = self._resolve_file(target)
+        if not path:
+            return "Informe um arquivo existente. Exemplo: revisar codigo teraps.py"
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except Exception as exc:
+            return f"Nao consegui ler {path}: {exc}"
+        lines = text.splitlines()
+        findings = []
+        risky_patterns = [
+            ("eval(", "uso de eval pode executar codigo arbitrario"),
+            ("exec(", "uso de exec exige validacao forte"),
+            ("shell=True", "shell=True aumenta risco ao montar comandos"),
+            ("password", "verifique se nao ha segredo fixo no codigo"),
+            ("token", "garanta que tokens nao sejam commitados"),
+            ("TODO", "ha TODOs pendentes para revisar"),
+            ("except Exception", "exceptions genericas precisam log/contexto"),
+        ]
+        for needle, message in risky_patterns:
+            if needle in text:
+                findings.append(f"- {message}: encontrado '{needle}'")
+        long_lines = sum(1 for line in lines if len(line) > 140)
+        if long_lines:
+            findings.append(f"- {long_lines} linhas passam de 140 caracteres; considere quebrar para leitura.")
+        if len(lines) > 900:
+            findings.append("- arquivo grande; separar responsabilidades pode facilitar teste e manutencao.")
+        if not findings:
+            findings.append("- nenhum risco obvio encontrado em varredura rapida.")
+        return (
+            f"Revisao rapida de {path.name}:\n"
+            f"- Linhas: {len(lines)}\n"
+            f"- Tamanho: {len(text) / 1024:.1f} KB\n"
+            + "\n".join(findings)
+            + "\n\nProximo passo: rode testes/compilacao e revise os fluxos mais usados pelo usuario."
+        )
+
+    def explain_code(self, target: str) -> str:
+        path = self._resolve_file(target)
+        if not path:
+            return "Informe um arquivo existente. Exemplo: explicar codigo teraps.py"
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        classes = re.findall(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)", text, re.MULTILINE)
+        funcs = re.findall(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)", text, re.MULTILINE)
+        imports = re.findall(r"^(?:import|from)\s+([A-Za-z0-9_\\.]+)", text, re.MULTILINE)
+        return (
+            f"Resumo de {path.name}:\n"
+            f"- Classes principais: {', '.join(classes[:12]) or 'nenhuma detectada'}\n"
+            f"- Funcoes soltas: {', '.join(funcs[:12]) or 'nenhuma detectada'}\n"
+            f"- Imports: {', '.join(dict.fromkeys(imports[:12])) or 'nenhum detectado'}\n"
+            f"- Linhas: {len(text.splitlines())}\n"
+            "Leitura inicial: comece pelas classes, depois siga para as rotas/comandos e por fim para a inicializacao."
+        )
+
+    def deploy_checklist(self) -> str:
+        return (
+            "Checklist de deploy/publicacao:\n"
+            "- rodar teste de compilacao e smoke test do executavel\n"
+            "- conferir .gitignore para nao enviar banco local, logs, tokens ou cache\n"
+            "- atualizar README com instalacao, uso e comandos principais\n"
+            "- versionar assets, icone, spec/build script e requirements\n"
+            "- criar tag/release quando o build estiver estavel\n"
+            "- validar em maquina fraca e forte, com e sem internet\n"
+            "- confirmar audio, microfone, banco SQLite e permissoes do Windows"
+        )
+
+    def design_system(self, product: str) -> str:
+        product = product.strip() or "produto"
+        return (
+            f"Design system base para {product}:\n"
+            "- Personalidade: futurista, humana, objetiva e confiavel\n"
+            "- Cores: fundo profundo, ciano para acao, prata para texto, champagne para destaques\n"
+            "- Tipografia: Segoe UI para Windows; pesos 400/600/700\n"
+            "- Espacamento: escala 4/8/12/16/24/32\n"
+            "- Componentes: barra de status, painel de conversa, campo de comando, avatar, alertas e historico\n"
+            "- Estados: online, ouvindo, processando, falando, erro recuperavel e offline\n"
+            "- Regra visual: avatar deve ser o sinal principal; controles nao competem com a presenca holografica"
+        )
+
+    def ux_review(self, description: str) -> str:
+        description = description.strip() or "tela atual"
+        return (
+            f"Revisao UX para {description}:\n"
+            "- deixe a acao principal sempre disponivel por texto e voz\n"
+            "- reduza botoes quando o comando puder ser entendido automaticamente\n"
+            "- mostre status claro: ouvindo, processando, falando ou aguardando\n"
+            "- mantenha historico pesquisavel para o usuario confiar no que aconteceu\n"
+            "- evite animacoes que cruzem rosto, boca, olhos ou texto\n"
+            "- em erro, explique o que falhou e ofereca uma proxima acao segura\n"
+            "- salve preferencias sem interromper o fluxo"
+        )
+
+    def design_brief(self, product: str) -> str:
+        product = product.strip() or "interface"
+        return (
+            f"Briefing de design para {product}:\n"
+            "Objetivo: criar uma experiencia tecnologica, humana e funcional.\n"
+            "Publico: criadores, programadores, designers e usuarios que querem automacao pessoal.\n"
+            "Tela principal: avatar holografico como foco, conversa lateral, status discreto e entrada natural.\n"
+            "Entregaveis: fluxo principal, estados da assistente, componentes, icone, paleta e prototipo responsivo.\n"
+            "Criterio de qualidade: parecer vivo e util, sem poluir a tela com controles desnecessarios."
+        )
+
+    def _resolve_file(self, target: str) -> Path | None:
+        clean = target.strip().strip('"')
+        if not clean:
+            return None
+        path = Path(clean)
+        if not path.is_absolute():
+            workspace = Path(str(self.config["workspace_path"] or BASE_DIR))
+            path = workspace / clean
+            if not path.exists():
+                path = BASE_DIR / clean
+        try:
+            path = path.resolve()
+        except Exception:
+            return None
+        return path if path.exists() and path.is_file() else None
+
+
 class HologramBridge:
     def __init__(self, config: Config) -> None:
         self.config = config
@@ -1940,6 +2136,7 @@ class TerapsBrain:
         self.home = SmartHomeControl(config, memory)
         self.routines = RoutineManager(config, memory, self.home, self.workspace)
         self.youtube = YouTubeCreatorManager(config, memory)
+        self.tech = TechStudio(config, memory)
         self.bridge = HologramBridge(config)
 
     def respond(self, text: str) -> str:
@@ -2032,6 +2229,34 @@ class TerapsBrain:
             return self.workspace.check_git_status()
         if low in {"pipelines", "status pipeline", "monitoramento", "build status"}:
             return self.workspace.pipeline_status()
+        if low in {"ajuda programador", "ajuda dev", "ajuda desenvolvedor", "ajuda designer", "tech studio", "mundo tecnologia"}:
+            return self.tech.help()
+        if low.startswith(("plano app ", "planejar app ", "planeje app ", "produto tech ")):
+            idea = clean.split(" ", 2)[-1]
+            return self.tech.plan_app(idea)
+        if low.startswith(("arquitetura projeto ", "arquitetura app ", "arquitetura sistema ")):
+            idea = clean.split(" ", 2)[-1]
+            return self.tech.architecture(idea)
+        if low.startswith(("stack projeto ", "stack app ", "tecnologias projeto ")):
+            idea = clean.split(" ", 2)[-1]
+            return self.tech.stack(idea)
+        if low.startswith(("revisar codigo ", "revisar código ", "code review ")):
+            target = re.sub(r"^(revisar codigo|revisar código|code review)\s+", "", clean, flags=re.IGNORECASE)
+            return self.tech.review_code(target)
+        if low.startswith(("explicar codigo ", "explicar código ", "entender codigo ")):
+            target = re.sub(r"^(explicar codigo|explicar código|entender codigo)\s+", "", clean, flags=re.IGNORECASE)
+            return self.tech.explain_code(target)
+        if low in {"checklist deploy", "checklist publicacao", "checklist publicação", "pre deploy"}:
+            return self.tech.deploy_checklist()
+        if low.startswith(("design system ", "sistema de design ")):
+            product = clean.split(" ", 2)[-1]
+            return self.tech.design_system(product)
+        if low.startswith(("ux review ", "revisao ux ", "revisão ux ")):
+            description = clean.split(" ", 2)[-1]
+            return self.tech.ux_review(description)
+        if low.startswith(("briefing design ", "briefing ui ", "briefing ux ")):
+            product = clean.split(" ", 2)[-1]
+            return self.tech.design_brief(product)
         if low in {"start day", "iniciar dia", "rotina matinal", "bom dia teraps"}:
             self.bridge.send_state("speaking", "smiling")
             return self.routines.start_day()
@@ -2195,6 +2420,28 @@ class TerapsBrain:
             return self.routines.daily_summary()
         if key in {"status git", "status do git", "verificar repositorio"}:
             return self.workspace.check_git_status()
+        if key in {"ajuda programador", "ajuda dev", "ajuda desenvolvedor", "ajuda designer", "tech studio", "mundo tecnologia"}:
+            return self.tech.help()
+        if key.startswith(("plano app ", "planejar app ", "planeje app ", "produto tech ")):
+            return self.tech.plan_app(clean.split(" ", 2)[-1])
+        if key.startswith(("arquitetura projeto ", "arquitetura app ", "arquitetura sistema ")):
+            return self.tech.architecture(clean.split(" ", 2)[-1])
+        if key.startswith(("stack projeto ", "stack app ", "tecnologias projeto ")):
+            return self.tech.stack(clean.split(" ", 2)[-1])
+        if key.startswith(("revisar codigo ", "code review ")):
+            target = re.sub(r"^(revisar codigo|revisar código|code review)\s+", "", clean, flags=re.IGNORECASE)
+            return self.tech.review_code(target)
+        if key.startswith(("explicar codigo ", "entender codigo ")):
+            target = re.sub(r"^(explicar codigo|explicar código|entender codigo)\s+", "", clean, flags=re.IGNORECASE)
+            return self.tech.explain_code(target)
+        if key in {"checklist deploy", "checklist publicacao", "pre deploy"}:
+            return self.tech.deploy_checklist()
+        if key.startswith(("design system ", "sistema de design ")):
+            return self.tech.design_system(clean.split(" ", 2)[-1])
+        if key.startswith(("ux review ", "revisao ux ")):
+            return self.tech.ux_review(clean.split(" ", 2)[-1])
+        if key.startswith(("briefing design ", "briefing ui ", "briefing ux ")):
+            return self.tech.design_brief(clean.split(" ", 2)[-1])
         if key in {"sensores", "seguranca", "status da casa", "ambiente"}:
             return self.home.security_status()
         if key in {"ponte 3d", "ponte holografica"}:
@@ -2294,6 +2541,9 @@ class TerapsBrain:
             "planejamento": ("Planejar", "planeje minha proxima tarefa em passos simples"),
             "criacao": ("Criar ideia", "crie uma ideia original para meu projeto"),
             "youtube": ("YouTube", "criar video youtube uma ideia para meu canal"),
+            "tecnologia": ("Tech Studio", "ajuda programador"),
+            "codigo": ("Revisar codigo", "revisar codigo teraps.py"),
+            "design": ("Design/UX", "design system Teraps"),
             "memoria": ("Memoria", "o que voce lembra"),
             "foco": ("Modo foco", "modo foco"),
             "casa": ("Ambiente", "sensores"),
@@ -2308,6 +2558,7 @@ class TerapsBrain:
             ("Resumo", "resumo executivo"),
             ("Sistema", "sistema"),
             ("Memoria", "o que voce lembra"),
+            ("Tech", "ajuda programador"),
             ("YouTube", "canal youtube"),
         ]
         for item in defaults:
@@ -2472,6 +2723,14 @@ class TerapsBrain:
             "- sensores / status da casa\n"
             "- avatar 3d / status avatar\n"
             "- status git / pipelines\n"
+            "- ajuda programador / ajuda designer\n"
+            "- plano app minha ideia\n"
+            "- arquitetura projeto minha ideia\n"
+            "- stack projeto minha ideia\n"
+            "- revisar codigo teraps.py / explicar codigo teraps.py\n"
+            "- checklist deploy\n"
+            "- design system Teraps / ux review tela principal\n"
+            "- briefing design Teraps\n"
             "- aprendizado automatico / estado automatico\n"
             "- automacao proativa\n"
             "- verificar atualizacao / configurar fonte update URL\n"
